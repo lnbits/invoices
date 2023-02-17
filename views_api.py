@@ -6,10 +6,10 @@ from loguru import logger
 from lnbits.core.crud import get_user
 from lnbits.core.services import create_invoice
 from lnbits.core.views.api import api_payment
-from lnbits.decorators import WalletTypeInfo, get_key_type
+from lnbits.decorators import WalletTypeInfo, get_key_type, check_admin
 from lnbits.utils.exchange_rates import fiat_amount_as_satoshis
 
-from . import invoices_ext
+from . import invoices_ext, scheduled_tasks
 from .crud import (
     create_invoice_internal,
     create_invoice_items,
@@ -131,3 +131,14 @@ async def api_invoices_check_payment(invoice_id: str, payment_hash: str):
         logger.error(exc)
         return {"paid": False}
     return status
+
+
+@invoices_ext.delete("/api/v1", status_code=HTTPStatus.OK, dependencies=[Depends(check_admin)])
+async def api_stop():
+    for t in scheduled_tasks:
+        try:
+            t.cancel()
+        except Exception as ex:
+            logger.warning(ex)
+
+    return {"success": True}
