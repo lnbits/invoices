@@ -7,7 +7,7 @@ This extension allows users to create "traditional" invoices (not in the lightni
 ## Usage
 
 1. Create an invoice by clicking "NEW INVOICE"\
-   ![create new invoice](https://imgur.com/a/Dce3wrr.png)
+   ![create new invoice](https://i.imgur.com/9RTk2E8.png)
 2. Fill the options for your INVOICE
    - select the wallet
    - select the fiat currency the invoice will be denominated in
@@ -16,4 +16,4 @@ This extension allows users to create "traditional" invoices (not in the lightni
    - add one or more line items
    - enter a name & price for each line item
 3. You can then use share your invoice link with your customer to receive payment\
-   ![invoice link](https://imgur.com/a/L0JOj4T.png)
+   ![invoice link](https://i.imgur.com/GxNuavy.png)
