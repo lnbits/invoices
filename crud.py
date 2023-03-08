@@ -150,6 +150,7 @@ async def delete_invoice(
         invoice_id: str,
 ) -> bool:
     try:
+        print("inside delete_invoice crud : " + invoice_id)
         await db.execute(
             f"""
             DELETE FROM invoices.payments
