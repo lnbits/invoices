@@ -67,7 +67,7 @@ async def api_invoice_create(
     return invoice_dict
 
 
-@invoices_ext.delete("/api/v1/invoice/{invoice_id}/delete", status_code=HTTPStatus.OK)
+@invoices_ext.delete("/api/v1/invoice/{invoice_id}/delete", status_code=HTTPStatus.OK, dependencies=[Depends(check_admin)])
 async def api_invoice_delete(invoice_id: str):
     try: 
         status = await delete_invoice(invoice_id=invoice_id)
