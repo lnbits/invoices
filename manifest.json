@@ -2,7 +2,7 @@
     "repos": [
         {
             "id": "invoices",
-            "organisation": "lnbits",
+            "organisation": "bitkarrot",
             "repository": "invoices"
         }
     ]
