@@ -543,7 +543,6 @@
           })
       },
       deleteInvoice(invoice_id) {
-        var self = this
         const adminkey = this.g.user.wallets[0].adminkey
         console.log("admin key ....", adminkey)
 
@@ -557,14 +556,12 @@
               'DELETE',
               '/invoices/api/v1/invoice/' +  invoice_id + '/delete', adminkey
               ).then(response => { 
-                console.log("response:")
-                console.log(response)
                 if (response.status == 200) {
-                  console.log("status: ", response.status)
-                  this.invoices = _.reject(this.invoices, obj => obj.invoice_id === invoice_id)
+                  console.log(this.invoices)
+                  this.invoices = _.reject(this.invoices, obj => obj.id === invoice_id)
+                  console.log(this.invoices)
                 }
-              // todo: handle this response to user properly
-              console.log(this.invoices)
+              //console.log(self.invoices)
             }).catch(err => { 
               LNbits.utils.notifyApiError(err)
             })
