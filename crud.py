@@ -13,7 +13,6 @@ from .models import (
     UpdateInvoiceItemData,
 )
 
-from loguru import logger
 
 async def get_invoice(invoice_id: str) -> Optional[Invoice]:
     row = await db.fetchone(
@@ -151,7 +150,6 @@ async def delete_invoice(
         invoice_id: str,
 ) -> bool:
     try:
-        logger.info(f"inside delete_invoice crud : {invoice_id}")
         await db.execute(
             f"""
             DELETE FROM invoices.payments
@@ -173,7 +171,7 @@ async def delete_invoice(
         await db.execute(
             f"""
             DELETE FROM invoices.invoices
-            WHERE invoice_id = ?
+            WHERE id = ?
             """,
             (
                 invoice_id,

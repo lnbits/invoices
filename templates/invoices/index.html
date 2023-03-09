@@ -557,11 +557,14 @@
               'DELETE',
               '/invoices/api/v1/invoice/' +  invoice_id + '/delete', adminkey
               ).then(response => { 
-                console.log("response")
+                console.log("response:")
                 console.log(response)
-              this.invoices = _.reject(this.invoices, obj => obj.invoice_id === invoice_id)
+                if (response.status == 200) {
+                  console.log("status: ", response.status)
+                  this.invoices = _.reject(this.invoices, obj => obj.invoice_id === invoice_id)
+                }
               // todo: handle this response to user properly
-              // console.log(this.invoices)
+              console.log(this.invoices)
             }).catch(err => { 
               LNbits.utils.notifyApiError(err)
             })
