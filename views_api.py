@@ -70,6 +70,7 @@ async def api_invoice_create(
 @invoices_ext.delete("/api/v1/invoice/{invoice_id}/delete", status_code=HTTPStatus.OK, dependencies=[Depends(check_admin)])
 async def api_invoice_delete(invoice_id: str):
     try: 
+        logger.info("delete invoice api call ")
         status = await delete_invoice(invoice_id=invoice_id)
         return  {"status": status}
     except Exception as e:
