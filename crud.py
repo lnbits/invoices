@@ -149,38 +149,34 @@ async def update_invoice_internal(
 async def delete_invoice(
         invoice_id: str,
 ) -> bool:
-    try:
-        await db.execute(
-            f"""
-            DELETE FROM invoices.payments
-            WHERE invoice_id = ?
-            """,
-            (
-                invoice_id,
-            ),
-        )
-        await db.execute(
-            f"""
-            DELETE FROM invoices.invoice_items
-            WHERE invoice_id = ?
-            """,
-            (
-                invoice_id,
-            ),
-        )
-        await db.execute(
-            f"""
-            DELETE FROM invoices.invoices
-            WHERE id = ?
-            """,
-            (
-                invoice_id,
-            ),
-        )
-        return True
-    except Exception as e:
-        print("Delete Exception: " + str(e))
-        return False
+    await db.execute(
+        f"""
+        DELETE FROM invoices.payments
+        WHERE invoice_id = ?
+        """,
+        (
+            invoice_id,
+        ),
+    )
+    await db.execute(
+        f"""
+        DELETE FROM invoices.invoice_items
+        WHERE invoice_id = ?
+        """,
+        (
+            invoice_id,
+        ),
+    )
+    await db.execute(
+        f"""
+        DELETE FROM invoices.invoices
+        WHERE id = ?
+        """,
+        (
+            invoice_id,
+        ),
+    )
+    return True
 
 
 async def update_invoice_items(
