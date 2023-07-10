@@ -7,7 +7,7 @@ from lnbits.core.crud import get_user
 from lnbits.core.services import create_invoice
 from lnbits.core.views.api import api_payment
 from lnbits.decorators import WalletTypeInfo, get_key_type, check_admin
-from lnbits.utils.exchange_rates import fiat_amount_as_satoshis
+from lnbits.utils.exchange_rates import fiat_amount_as_satoshis, get_fiat_rate_satoshis
 
 from . import invoices_ext, scheduled_tasks
 from .crud import (
@@ -111,13 +111,19 @@ async def api_invoices_create_payment(invoice_id: str, famount: int = Query(...,
         )
 
     price_in_sats = await fiat_amount_as_satoshis(famount / 100, invoice.currency)
+    extra = {"tag": "invoices", "invoice_id": invoice_id, "famount": famount}
+    
+    extra["fiat"] = True
+    extra["currency"] = invoice.currency
+    extra["fiatAmount"] = famount / 100
+    extra["rate"] = await get_fiat_rate_satoshis(invoice.currency)
 
     try:
         payment_hash, payment_request = await create_invoice(
             wallet_id=invoice.wallet,
             amount=price_in_sats,
             memo=f"Payment for invoice {invoice_id}",
-            extra={"tag": "invoices", "invoice_id": invoice_id, "famount": famount},
+            extra=extra,
         )
     except Exception as e:
         raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
