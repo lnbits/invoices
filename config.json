@@ -1,6 +1,7 @@
 {
   "name": "Invoices",
   "short_description": "Create invoices for your clients.",
-	"tile": "/invoices/static/image/invoices.png",
-  "contributors": ["leesalminen"]
+  "tile": "/invoices/static/image/invoices.png",
+  "contributors": ["leesalminen"],
+  "min_lnbits_version": "0.11.0"
 }
