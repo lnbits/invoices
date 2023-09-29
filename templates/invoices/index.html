@@ -558,7 +558,7 @@
             LNbits.api
               .request(
                 'DELETE',
-                '/invoices/api/v1/invoice/' + invoice_id + '/delete',
+                '/invoices/api/v1/invoice/' + invoice_id,
                 adminkey,
               )
               .then((response) => {
