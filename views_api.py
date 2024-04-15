@@ -9,7 +9,7 @@ from lnbits.core.views.api import api_payment
 from lnbits.decorators import WalletTypeInfo, get_key_type, check_admin
 from lnbits.utils.exchange_rates import fiat_amount_as_satoshis
 
-from . import invoices_ext, scheduled_tasks
+from . import invoices_ext
 from .crud import (
     create_invoice_internal,
     create_invoice_items,
@@ -69,7 +69,7 @@ async def api_invoice_create(
 
 @invoices_ext.delete("/api/v1/invoice/{invoice_id}", status_code=HTTPStatus.OK)
 async def api_invoice_delete(invoice_id: str):
-    try: 
+    try:
         status = await delete_invoice(invoice_id=invoice_id)
         return  {"status": status}
     except Exception as e:
@@ -141,14 +141,3 @@ async def api_invoices_check_payment(invoice_id: str, payment_hash: str):
         logger.error(exc)
         return {"paid": False}
     return status
-
-
-@invoices_ext.delete("/api/v1", status_code=HTTPStatus.OK, dependencies=[Depends(check_admin)])
-async def api_stop():
-    for t in scheduled_tasks:
-        try:
-            t.cancel()
-        except Exception as ex:
-            logger.warning(ex)
-
-    return {"success": True}
