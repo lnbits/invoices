@@ -2,6 +2,41 @@
   "name": "Invoices",
   "short_description": "Create invoices for your clients.",
   "tile": "/invoices/static/image/invoices.png",
-  "contributors": ["leesalminen"],
-  "min_lnbits_version": "0.12.5"
+  "min_lnbits_version": "0.12.5",
+  "contributors": [
+    {
+      "name": "leesalminen",
+      "uri": "https://github.com/leesalminen",
+      "role": "Contributor"
+    },
+    {
+      "name": "talvasconcelos",
+      "uri": "https://github.com/talvasconcelos",
+      "role": "Contributor"
+    },
+    {
+      "name": "bitkarrot",
+      "uri": "https://github.com/bitkarrot",
+      "role": "Contributor"
+    },
+    {
+      "name": "dni",
+      "uri": "https://github.com/dni",
+      "role": "Contributor"
+    }
+  ],
+  "images": [
+    {
+      "uri": "https://raw.githubusercontent.com/lnbits/invoices/main/static/image/1.png"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/lnbits/invoices/main/static/image/2.png"
+    },
+    {
+      "uri": "https://raw.githubusercontent.com/lnbits/invoices/main/static/image/3.png"
+    }
+  ],
+  "description_md": "https://raw.githubusercontent.com/lnbits/invoices/main/description.md",
+  "terms_and_conditions_md": "https://raw.githubusercontent.com/lnbits/invoices/main/toc.md",
+  "license": "MIT"
 }
