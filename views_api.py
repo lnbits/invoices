@@ -71,7 +71,7 @@ async def api_invoice_create(
 async def api_invoice_delete(invoice_id: str):
     try:
         status = await delete_invoice(invoice_id=invoice_id)
-        return  {"status": status}
+        return {"status": status}
     except Exception as e:
         raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(e))
 

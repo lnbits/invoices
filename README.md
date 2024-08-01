@@ -1,4 +1,5 @@
 # Invoices - <small>[LNbits](https://github.com/lnbits/lnbits) extension</small>
+
 <small>For more about LNBits extension check [this tutorial](https://github.com/lnbits/lnbits/wiki/LNbits-Extensions)</small>
 
 ## Create invoices that you can send to your client to pay online over Lightning.

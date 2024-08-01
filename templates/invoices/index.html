@@ -95,7 +95,7 @@
   </div>
 
   <q-dialog v-model="formDialog.show" position="top" @hide="closeFormDialog">
-    <q-card class="q-pa-lg q-pt-xl" style="width: 500px;">
+    <q-card class="q-pa-lg q-pt-xl" style="width: 500px">
       <q-form @submit="saveInvoice" class="q-gutter-md">
         <q-select
           filled
@@ -241,7 +241,7 @@
   var mapInvoice = function (obj) {
     obj.time = Quasar.utils.date.formatDate(
       new Date(obj.time * 1000),
-      'YYYY-MM-DD HH:mm',
+      'YYYY-MM-DD HH:mm'
     )
 
     return obj
@@ -431,56 +431,56 @@
           'YER',
           'ZAR',
           'ZMW',
-          'ZWL',
+          'ZWL'
         ],
         invoicesTable: {
           columns: [
-            { name: 'id', align: 'left', label: 'ID', field: 'id' },
-            { name: 'status', align: 'left', label: 'Status', field: 'status' },
-            { name: 'time', align: 'left', label: 'Created', field: 'time' },
-            { name: 'wallet', align: 'left', label: 'Wallet', field: 'wallet' },
+            {name: 'id', align: 'left', label: 'ID', field: 'id'},
+            {name: 'status', align: 'left', label: 'Status', field: 'status'},
+            {name: 'time', align: 'left', label: 'Created', field: 'time'},
+            {name: 'wallet', align: 'left', label: 'Wallet', field: 'wallet'},
             {
               name: 'currency',
               align: 'left',
               label: 'Currency',
-              field: 'currency',
+              field: 'currency'
             },
             {
               name: 'company_name',
               align: 'left',
               label: 'Company Name',
-              field: 'company_name',
+              field: 'company_name'
             },
             {
               name: 'first_name',
               align: 'left',
               label: 'First Name',
-              field: 'first_name',
+              field: 'first_name'
             },
             {
               name: 'last_name',
               align: 'left',
               label: 'Last Name',
-              field: 'last_name',
+              field: 'last_name'
             },
-            { name: 'email', align: 'left', label: 'Email', field: 'email' },
-            { name: 'phone', align: 'left', label: 'Phone', field: 'phone' },
+            {name: 'email', align: 'left', label: 'Email', field: 'email'},
+            {name: 'phone', align: 'left', label: 'Phone', field: 'phone'},
             {
               name: 'address',
               align: 'left',
               label: 'Address',
-              field: 'address',
-            },
+              field: 'address'
+            }
           ],
           pagination: {
-            rowsPerPage: 10,
-          },
+            rowsPerPage: 10
+          }
         },
         formDialog: {
           show: false,
           data: {},
-          invoiceItems: [],
-        },
+          invoiceItems: []
+        }
       }
     },
     methods: {
@@ -500,11 +500,11 @@
         LNbits.api
           .request('GET', '/invoices/api/v1/invoice/' + invoice_id)
           .then(function (response) {
-            self.formDialog.invoiceItems = response.data.items.map(function (
-              obj,
-            ) {
-              return mapInvoiceItems(obj)
-            })
+            self.formDialog.invoiceItems = response.data.items.map(
+              function (obj) {
+                return mapInvoiceItems(obj)
+              }
+            )
           })
       },
       getInvoices: function () {
@@ -514,7 +514,7 @@
           .request(
             'GET',
             '/invoices/api/v1/invoices?all_wallets=true',
-            this.g.user.wallets[0].inkey,
+            this.g.user.wallets[0].inkey
           )
           .then(function (response) {
             self.invoices = response.data.map(function (obj) {
@@ -532,9 +532,9 @@
             'POST',
             '/invoices/api/v1/invoice' + (data.id ? '/' + data.id : ''),
             _.findWhere(this.g.user.wallets, {
-              id: this.formDialog.data.wallet,
+              id: this.formDialog.data.wallet
             }).inkey,
-            data,
+            data
           )
           .then(function (response) {
             if (!data.id) {
@@ -559,30 +559,30 @@
               .request(
                 'DELETE',
                 '/invoices/api/v1/invoice/' + invoice_id,
-                adminkey,
+                adminkey
               )
-              .then((response) => {
+              .then(response => {
                 if (response.status == 200) {
                   this.invoices = _.reject(
                     this.invoices,
-                    (obj) => obj.id === invoice_id,
+                    obj => obj.id === invoice_id
                   )
                 }
               })
-              .catch((err) => {
+              .catch(err => {
                 LNbits.utils.notifyApiError(err)
               })
           })
       },
       exportCSV: function () {
         LNbits.utils.exportCSV(this.invoicesTable.columns, this.invoices)
-      },
+      }
     },
     created: function () {
       if (this.g.user.wallets.length) {
         this.getInvoices()
       }
-    },
+    }
   })
 </script>
 {% endblock %}
