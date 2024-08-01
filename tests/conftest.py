@@ -1,11 +1,11 @@
 import pytest_asyncio
-
 from lnbits.core.crud import create_account, create_wallet
-from lnbits.extensions.invoices.crud import (
+
+from ..crud import (
     create_invoice_internal,
     create_invoice_items,
 )
-from lnbits.extensions.invoices.models import CreateInvoiceData
+from ..models import CreateInvoiceData, CreateInvoiceItemData, InvoiceStatusEnum
 
 
 @pytest_asyncio.fixture
@@ -19,12 +19,15 @@ async def invoices_wallet():
 @pytest_asyncio.fixture
 async def accounting_invoice(invoices_wallet):
     invoice_data = CreateInvoiceData(
-        status="open",
+        status=InvoiceStatusEnum.paid,
         currency="USD",
         company_name="LNbits, Inc",
         first_name="Ben",
         last_name="Arc",
-        items=[{"amount": 10.20, "description": "Item costs 10.20"}],
+        items=[CreateInvoiceItemData(amount=10.20, description="Item costs 10.20")],
+        email="a@bna.at",
+        address="1234 Main St",
+        phone="600-000-000-000",
     )
     invoice = await create_invoice_internal(
         wallet_id=invoices_wallet.id, data=invoice_data

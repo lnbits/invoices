@@ -1,8 +1,8 @@
 from typing import List, Optional, Union
 
+from lnbits.db import Database
 from lnbits.helpers import urlsafe_short_hash
 
-from . import db
 from .models import (
     CreateInvoiceData,
     CreateInvoiceItemData,
@@ -12,6 +12,8 @@ from .models import (
     UpdateInvoiceData,
     UpdateInvoiceItemData,
 )
+
+db = Database("ext_invoices")
 
 
 async def get_invoice(invoice_id: str) -> Optional[Invoice]:
@@ -75,7 +77,11 @@ async def create_invoice_internal(wallet_id: str, data: CreateInvoiceData) -> In
     invoice_id = urlsafe_short_hash()
     await db.execute(
         """
-        INSERT INTO invoices.invoices (id, wallet, status, currency, company_name, first_name, last_name, email, phone, address)
+        INSERT INTO invoices.invoices
+        (
+            id, wallet, status, currency, company_name,
+            first_name, last_name, email, phone, address
+        )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
@@ -125,7 +131,8 @@ async def update_invoice_internal(
     await db.execute(
         """
         UPDATE invoices.invoices
-        SET wallet = ?, currency = ?, status = ?, company_name = ?, first_name = ?, last_name = ?, email = ?, phone = ?, address = ?
+        SET wallet = ?, currency = ?, status = ?, company_name = ?,
+        first_name = ?, last_name = ?, email = ?, phone = ?, address = ?
         WHERE id = ?
         """,
         (
@@ -151,21 +158,21 @@ async def delete_invoice(
     invoice_id: str,
 ) -> bool:
     await db.execute(
-        f"""
+        """
         DELETE FROM invoices.payments
         WHERE invoice_id = ?
         """,
         (invoice_id,),
     )
     await db.execute(
-        f"""
+        """
         DELETE FROM invoices.invoice_items
         WHERE invoice_id = ?
         """,
         (invoice_id,),
     )
     await db.execute(
-        f"""
+        """
         DELETE FROM invoices.invoices
         WHERE id = ?
         """,

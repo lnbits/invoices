@@ -2,14 +2,11 @@ import asyncio
 
 from fastapi import APIRouter
 from loguru import logger
-from typing import List
 
-from lnbits.db import Database
-from lnbits.helpers import template_renderer
-from lnbits.tasks import create_permanent_unique_task
-
-db = Database("ext_invoices")
-
+from .crud import db
+from .tasks import wait_for_paid_invoices
+from .views import invoices_generic_router
+from .views_api import invoices_api_router
 
 invoices_static_files = [
     {
@@ -17,18 +14,9 @@ invoices_static_files = [
         "name": "invoices_static",
     }
 ]
-
 invoices_ext: APIRouter = APIRouter(prefix="/invoices", tags=["invoices"])
-
-
-def invoices_renderer():
-    return template_renderer(["invoices/templates"])
-
-
-from .tasks import wait_for_paid_invoices
-from .views import *  # noqa: F401,F403
-from .views_api import *  # noqa: F401,F403
-
+invoices_ext.include_router(invoices_generic_router)
+invoices_ext.include_router(invoices_api_router)
 
 scheduled_tasks: list[asyncio.Task] = []
 
@@ -42,5 +30,16 @@ def invoices_stop():
 
 
 def invoices_start():
+    from lnbits.tasks import create_permanent_unique_task
+
     task = create_permanent_unique_task("ext_invoices", wait_for_paid_invoices)
     scheduled_tasks.append(task)
+
+
+__all__ = [
+    "db",
+    "invoices_static_files",
+    "invoices_ext",
+    "invoices_stop",
+    "invoices_start",
+]
