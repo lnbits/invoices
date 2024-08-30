@@ -1,14 +1,13 @@
 from datetime import datetime
 from http import HTTPStatus
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.templating import Jinja2Templates
-from starlette.responses import HTMLResponse
-
 from lnbits.core.models import User
 from lnbits.decorators import check_user_exists
+from lnbits.helpers import template_renderer
+from starlette.responses import HTMLResponse
 
-from . import invoices_ext, invoices_renderer
 from .crud import (
     get_invoice,
     get_invoice_items,
@@ -18,16 +17,21 @@ from .crud import (
 )
 
 templates = Jinja2Templates(directory="templates")
+invoices_generic_router = APIRouter()
 
 
-@invoices_ext.get("/", response_class=HTMLResponse)
+def invoices_renderer():
+    return template_renderer(["invoices/templates"])
+
+
+@invoices_generic_router.get("/", response_class=HTMLResponse)
 async def index(request: Request, user: User = Depends(check_user_exists)):
     return invoices_renderer().TemplateResponse(
         "invoices/index.html", {"request": request, "user": user.dict()}
     )
 
 
-@invoices_ext.get("/pay/{invoice_id}", response_class=HTMLResponse)
+@invoices_generic_router.get("/pay/{invoice_id}", response_class=HTMLResponse)
 async def pay(request: Request, invoice_id: str):
     invoice = await get_invoice(invoice_id)
 

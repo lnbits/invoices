@@ -1,9 +1,9 @@
 {
-    "repos": [
-        {
-            "id": "invoices",
-            "organisation": "lnbits",
-            "repository": "invoices"
-        }
-    ]
+  "repos": [
+    {
+      "id": "invoices",
+      "organisation": "lnbits",
+      "repository": "invoices"
+    }
+  ]
 }
