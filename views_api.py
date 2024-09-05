@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from lnbits.core.crud import get_standalone_payment, get_user
 from lnbits.core.models import WalletTypeInfo
 from lnbits.core.services import create_invoice
-from lnbits.decorators import get_key_type
+from lnbits.decorators import require_admin_key
 from lnbits.utils.exchange_rates import fiat_amount_as_satoshis
 from loguru import logger
 
@@ -21,24 +21,25 @@ from .crud import (
     update_invoice_internal,
     update_invoice_items,
 )
-from .models import CreateInvoiceData, UpdateInvoiceData
+from .models import CreateInvoiceData, Invoice, UpdateInvoiceData
 
 invoices_api_router = APIRouter()
 
 
-@invoices_api_router.get("/api/v1/invoices", status_code=HTTPStatus.OK)
+@invoices_api_router.get("/api/v1/invoices")
 async def api_invoices(
-    all_wallets: bool = Query(None), wallet: WalletTypeInfo = Depends(get_key_type)
-):
-    wallet_ids = [wallet.wallet.id]
+    all_wallets: bool = Query(None),
+    key_info: WalletTypeInfo = Depends(require_admin_key),
+) -> list[Invoice]:
+    wallet_ids = [key_info.wallet.id]
     if all_wallets:
-        user = await get_user(wallet.wallet.user)
+        user = await get_user(key_info.wallet.user)
         wallet_ids = user.wallet_ids if user else []
 
-    return [invoice.dict() for invoice in await get_invoices(wallet_ids)]
+    return await get_invoices(wallet_ids)
 
 
-@invoices_api_router.get("/api/v1/invoice/{invoice_id}", status_code=HTTPStatus.OK)
+@invoices_api_router.get("/api/v1/invoice/{invoice_id}")
 async def api_invoice(invoice_id: str):
     invoice = await get_invoice(invoice_id)
     if not invoice:
@@ -58,16 +59,18 @@ async def api_invoice(invoice_id: str):
 
 @invoices_api_router.post("/api/v1/invoice", status_code=HTTPStatus.CREATED)
 async def api_invoice_create(
-    data: CreateInvoiceData, wallet: WalletTypeInfo = Depends(get_key_type)
+    data: CreateInvoiceData, key_info: WalletTypeInfo = Depends(require_admin_key)
 ):
-    invoice = await create_invoice_internal(wallet_id=wallet.wallet.id, data=data)
+    invoice = await create_invoice_internal(wallet_id=key_info.wallet.id, data=data)
     items = await create_invoice_items(invoice_id=invoice.id, data=data.items)
     invoice_dict = invoice.dict()
     invoice_dict["items"] = items
     return invoice_dict
 
 
-@invoices_api_router.delete("/api/v1/invoice/{invoice_id}", status_code=HTTPStatus.OK)
+@invoices_api_router.delete(
+    "/api/v1/invoice/{invoice_id}", dependencies=[Depends(require_admin_key)]
+)
 async def api_invoice_delete(invoice_id: str):
     try:
         status = await delete_invoice(invoice_id=invoice_id)
@@ -78,13 +81,21 @@ async def api_invoice_delete(invoice_id: str):
         ) from exc
 
 
-@invoices_api_router.post("/api/v1/invoice/{invoice_id}", status_code=HTTPStatus.OK)
+@invoices_api_router.post("/api/v1/invoice/{invoice_id}")
 async def api_invoice_update(
     data: UpdateInvoiceData,
     invoice_id: str,
-    wallet: WalletTypeInfo = Depends(get_key_type),
+    key_info: WalletTypeInfo = Depends(require_admin_key),
 ):
-    invoice = await update_invoice_internal(wallet_id=wallet.wallet.id, data=data)
+    invoice = await get_invoice(invoice_id)
+    if not invoice:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail="Invoice does not exist."
+        )
+    for key, value in data.dict().items():
+        setattr(invoice, key, value)
+    invoice.wallet = key_info.wallet.id
+    invoice = await update_invoice_internal(invoice)
     items = await update_invoice_items(invoice_id=invoice_id, data=data.items)
     invoice_dict = invoice.dict()
     invoice_dict["items"] = items
@@ -130,7 +141,8 @@ async def api_invoices_create_payment(invoice_id: str, famount: int = Query(...,
 
 
 @invoices_api_router.get(
-    "/api/v1/invoice/{invoice_id}/payments/{payment_hash}", status_code=HTTPStatus.OK
+    "/api/v1/invoice/{invoice_id}/payments/{payment_hash}",
+    dependencies=[Depends(require_admin_key)],
 )
 async def api_invoices_check_payment(invoice_id: str, payment_hash: str):
     invoice = await get_invoice(invoice_id)
@@ -140,9 +152,11 @@ async def api_invoices_check_payment(invoice_id: str, payment_hash: str):
         )
     try:
         payment = await get_standalone_payment(payment_hash)
-        assert payment, "Payment not found."
-        status = await payment.check_status()
-        return {"paid": status.paid}
+        if not payment:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND, detail="Payment does not exist."
+            )
+        return {"paid": payment.success}
 
     except Exception as exc:
         logger.error(exc)

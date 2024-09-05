@@ -47,6 +47,6 @@ async def on_invoice_paid(payment: Payment) -> None:
 
     if payments_total >= invoice_total:
         invoice.status = InvoiceStatusEnum.paid
-        await update_invoice_internal(invoice.wallet, invoice)
+        await update_invoice_internal(invoice)
 
     return
