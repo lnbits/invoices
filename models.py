@@ -1,5 +1,4 @@
 from enum import Enum
-from sqlite3 import Row
 from typing import List, Optional
 
 from fastapi import Query
@@ -69,10 +68,6 @@ class Invoice(BaseModel):
     class Config:
         use_enum_values = True
 
-    @classmethod
-    def from_row(cls, row: Row) -> "Invoice":
-        return cls(**dict(row))
-
 
 class InvoiceItem(BaseModel):
     id: str
@@ -83,20 +78,12 @@ class InvoiceItem(BaseModel):
     class Config:
         orm_mode = True
 
-    @classmethod
-    def from_row(cls, row: Row) -> "InvoiceItem":
-        return cls(**dict(row))
-
 
 class Payment(BaseModel):
     id: str
     invoice_id: str
     amount: int
     time: int
-
-    @classmethod
-    def from_row(cls, row: Row) -> "Payment":
-        return cls(**dict(row))
 
 
 class CreatePaymentData(BaseModel):
