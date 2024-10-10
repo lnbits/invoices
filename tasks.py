@@ -17,7 +17,7 @@ from .models import InvoiceStatusEnum
 
 async def wait_for_paid_invoices():
     invoice_queue = asyncio.Queue()
-    register_invoice_listener(invoice_queue)
+    register_invoice_listener(invoice_queue, "ext_invoices")
 
     while True:
         payment = await invoice_queue.get()
@@ -25,7 +25,7 @@ async def wait_for_paid_invoices():
 
 
 async def on_invoice_paid(payment: Payment) -> None:
-    if payment.extra.get("tag") != "invoices":
+    if not payment.extra or payment.extra.get("tag") != "invoices":
         return
 
     invoice_id = payment.extra.get("invoice_id")
