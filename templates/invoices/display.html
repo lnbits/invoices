@@ -1,0 +1,263 @@
+{% extends "public.html" %} {% block toolbar_title %} Invoice
+<q-btn
+  flat
+  dense
+  size="md"
+  @click.prevent="urlDialog.show = true"
+  icon="share"
+  color="white"
+></q-btn>
+<q-btn
+  flat
+  dense
+  size="md"
+  @click.prevent="printInvoice()"
+  icon="print"
+  color="white"
+></q-btn>
+{% endblock %}{% from "macros.jinja" import window_vars with context %} {% block
+page %}
+<link rel="stylesheet" href="/invoices/static/css/pay.css" />
+<div id="invoicePage">
+  <div class="row q-col-gutter-md">
+    <div class="col-md-6 col-sm-12 col-xs-12">
+      <q-card>
+        <q-card-section>
+          <p class="text-bold">Invoice</p>
+          <q-list bordered separator>
+            <q-item clickable v-ripple>
+              <q-item-section><b>ID</b></q-item-section>
+              <q-item-section
+                style="word-break: break-all"
+                v-text="invoice.id"
+              ></q-item-section>
+            </q-item>
+
+            <q-item clickable v-ripple>
+              <q-item-section><b>Created At</b></q-item-section>
+              <q-item-section
+                v-text="formatedDate(invoice.time)"
+              ></q-item-section>
+            </q-item>
+
+            <q-item clickable v-ripple>
+              <q-item-section><b>Status</b></q-item-section>
+              <q-item-section>
+                <span>
+                  <q-badge color="">
+                    <span v-text="invoice.status"></span>
+                  </q-badge>
+                </span>
+              </q-item-section>
+            </q-item>
+
+            <q-item clickable v-ripple>
+              <q-item-section><b>Total</b></q-item-section>
+              <q-item-section v-text="amountTotal"> </q-item-section>
+            </q-item>
+
+            <q-item>
+              <q-item-section><b>Paid</b></q-item-section>
+              <q-item-section>
+                <div class="row" style="align-items: center">
+                  <div class="col-sm-6">
+                    <span v-text="paidTotal"></span>
+                  </div>
+                  <div class="col-sm-6" id="payButtonContainer">
+                    <q-btn
+                      unelevated
+                      color="primary"
+                      @click="openFormDialog"
+                      v-if="invoice.status == 'open' && payments_total < invoice_total"
+                    >
+                      Pay Invoice
+                    </q-btn>
+                  </div>
+                </div>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+      </q-card>
+    </div>
+    <div class="col-md-6 col-sm-12 col-xs-12">
+      <q-card>
+        <q-card-section>
+          <p class="text-bold">Bill To</p>
+          <q-list bordered separator>
+            <q-item clickable v-ripple>
+              <q-item-section class="text-bold">Company Name</q-item-section>
+              <q-item-section v-text="invoice.company_name"></q-item-section>
+            </q-item>
+            <q-item clickable v-ripple>
+              <q-item-section class="text-bold">Name</q-item-section>
+              <q-item-section
+                v-text="`${invoice.first_name} ${invoice.last_name}`"
+              ></q-item-section>
+            </q-item>
+            <q-item clickable v-ripple>
+              <q-item-section class="text-bold">Address</q-item-section>
+              <q-item-section v-text="invoice.address"></q-item-section>
+            </q-item>
+            <q-item clickable v-ripple>
+              <q-item-section class="text-bold">Email</q-item-section>
+              <q-item-section v-text="invoice.email"></q-item-section>
+            </q-item>
+            <q-item clickable v-ripple>
+              <q-item-section class="text-bold">Phone</q-item-section>
+              <q-item-section v-text="invoice.phone"></q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+      </q-card>
+    </div>
+  </div>
+  <div class="clear"></div>
+  <div class="row q-col-gutter-md">
+    <div class="col-12">
+      <q-card>
+        <q-card-section>
+          <p class="text-bold">Items</p>
+          <q-list bordered separator>
+            <q-item>
+              <q-item-section class="text-bold">Item</q-item-section>
+              <q-item-section side class="text-bold">Amount</q-item-section>
+            </q-item>
+            <q-item clickable v-ripple v-for="item in items" :key="item.id">
+              <q-item-section v-text="item.description"></q-item-section>
+              <q-item-section
+                side
+                v-text="parseFloat(item.amount / 100).toFixed(2)"
+              ></q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+      </q-card>
+    </div>
+  </div>
+  <div class="clear"></div>
+  <div class="row q-col-gutter-md">
+    <div class="col-12 col-md-7">
+      <q-card>
+        <q-card-section>
+          <p class="text-bold">Payments</p>
+          <q-list bordered separator>
+            <q-item clickable v-ripple>
+              <q-item-section class="text-bold">Date</q-item-section>
+              <q-item-section side class="text-bold">Amount</q-item-section>
+            </q-item>
+            <q-item
+              clickable
+              v-ripple
+              v-for="payment in payments"
+              :key="payment.id"
+            >
+              <q-item-section
+                v-text="formatedDate(payment.time)"
+              ></q-item-section>
+              <q-item-section
+                side
+                v-text="parseFloat(payment.amount / 100).toFixed(2)"
+              ></q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+      </q-card>
+    </div>
+    <div class="col-12 col-md-5" id="printQrCode">
+      <div class="text-center">
+        <p><b>Scan to View & Pay Online!</b></p>
+        <div class="q-mx-auto q-mb-md" style="max-width: 200px">
+          <lnbits-qrcode :value="'{{ request.url }}'"></lnbits-qrcode>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DIALOGS -->
+  <q-dialog v-model="formDialog.show" position="top" @hide="closeFormDialog">
+    <q-card class="q-pa-lg q-pt-xl lnbits__dialog-card">
+      <q-form @submit="createPayment" class="q-gutter-md">
+        <q-input
+          filled
+          dense
+          v-model="formDialog.data.payment_amount"
+          :rules="[val => val >= 0.01 || 'Minimum amount is 0.01']"
+          min="0.01"
+          label="Payment Amount"
+        >
+          <template v-slot:append>
+            <span style="font-size: 12px" v-text="invoice.currency"></span>
+          </template>
+        </q-input>
+
+        <div class="row q-mt-lg">
+          <q-btn
+            unelevated
+            color="primary"
+            :disable="formDialog.data.payment_amount == null"
+            type="submit"
+            >Create Payment</q-btn
+          >
+          <q-btn v-close-popup flat color="grey" class="q-ml-auto"
+            >Cancel</q-btn
+          >
+        </div>
+      </q-form>
+    </q-card>
+  </q-dialog>
+
+  <q-dialog
+    v-model="qrCodeDialog.show"
+    position="top"
+    @hide="closeQrCodeDialog"
+  >
+    <q-card class="q-pa-lg q-pt-xl lnbits__dialog-card text-center">
+      <a class="text-secondary" :href="'lightning:' + qrCodeDialog.data.bolt11">
+        <lnbits-qrcode
+          :value="'lightning:' + qrCodeDialog.data.bolt11"
+        ></lnbits-qrcode>
+      </a>
+      <br />
+      <q-btn
+        outline
+        color="grey"
+        @click="copyText('lightning:' + qrCodeDialog.data.bolt11, 'Invoice copied to clipboard!')"
+        >Copy Invoice</q-btn
+      >
+    </q-card>
+  </q-dialog>
+
+  <q-dialog v-model="urlDialog.show" position="top">
+    <q-card class="q-pa-lg q-pt-xl lnbits__dialog-card">
+      <lnbits-qrcode :value="shareUrl" class="rounded-borders"></lnbits-qrcode>
+      <div class="text-center q-mb-xl">
+        <p style="word-break: break-all"><span v-text="shareUrl"></span></p>
+      </div>
+      <div class="row q-mt-lg">
+        <q-btn
+          outline
+          color="grey"
+          @click="copyText(shareUrl, 'Invoice Pay URL copied to clipboard!')"
+          >Copy URL</q-btn
+        >
+        <q-btn v-close-popup flat color="grey" class="q-ml-auto">Close</q-btn>
+      </div>
+    </q-card>
+  </q-dialog>
+</div>
+
+{% endblock %} {% block scripts %}
+<script>
+  let paymentsString = {{ invoice_payments | tojson | safe }}
+  let itemString = {{ invoice_items | tojson | safe }}
+
+  const invoice = JSON.parse('{{ invoice | safe }}')
+  const invoiceItems = itemString.map(element => JSON.parse(element)) || []
+  const invoice_total = parseInt('{{ invoice_total }}')
+  const invoicePayments = paymentsString.map(element => JSON.parse(element)) || []
+  const payments_total = parseInt('{{ payments_total }}')
+  const shareUrl = '{{ request.url }}'
+</script>
+<script src="{{ static_url_for('invoices/static', path='js/display.js') }}"></script>
+{% endblock %}

@@ -1,4 +1,3 @@
-import time
 from typing import List, Optional, Union
 
 from lnbits.db import Database
@@ -6,11 +5,10 @@ from lnbits.helpers import urlsafe_short_hash
 
 from .models import (
     CreateInvoiceData,
-    CreateInvoiceItemData,
     Invoice,
     InvoiceItem,
+    InvoiceItemData,
     Payment,
-    UpdateInvoiceItemData,
 )
 
 db = Database("ext_invoices")
@@ -80,7 +78,6 @@ async def create_invoice_internal(wallet_id: str, data: CreateInvoiceData) -> In
     invoice = Invoice(
         id=invoice_id,
         wallet=wallet_id,
-        time=int(time.time()),
         status=data.status,
         currency=data.currency,
         company_name=data.company_name,
@@ -95,7 +92,7 @@ async def create_invoice_internal(wallet_id: str, data: CreateInvoiceData) -> In
 
 
 async def create_invoice_items(
-    invoice_id: str, data: List[CreateInvoiceItemData]
+    invoice_id: str, data: List[InvoiceItemData]
 ) -> List[InvoiceItem]:
     invoice_items = []
     for item in data:
@@ -134,47 +131,14 @@ async def delete_invoice(
     return True
 
 
-async def update_invoice_items(
-    invoice_id: str, data: List[UpdateInvoiceItemData]
-) -> List[InvoiceItem]:
-    updated_items = []
-    for item in data:
-        updated_items.append(item.id)
-        await db.execute(
-            """
-            UPDATE invoices.invoice_items
-            SET description = :desc, amount = :amount
-            WHERE id = :id
-            """,
-            {
-                "id": item.id,
-                "desc": item.description,
-                "amount": int(item.amount * 100),
-            },
-        )
-
-    if len(updated_items) == 0:
-        updated_items = ["skip"]
-
-    updated = ",".join([f"'{item}'" for item in updated_items])
+async def delete_invoice_items(
+    invoice_id: str,
+) -> bool:
     await db.execute(
-        f"""
-        DELETE FROM invoices.invoice_items
-        WHERE invoice_id = :id
-        AND id NOT IN ({updated})
-        """,
+        "DELETE FROM invoices.invoice_items WHERE invoice_id = :id",
         {"id": invoice_id},
     )
-
-    for item in data:
-        if not item:
-            await create_invoice_items(
-                invoice_id=invoice_id,
-                data=[CreateInvoiceItemData(description=item.description)],
-            )
-
-    invoice_items = await get_invoice_items(invoice_id)
-    return invoice_items
+    return True
 
 
 async def create_invoice_payment(invoice_id: str, amount: int) -> Payment:
