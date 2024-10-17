@@ -1,5 +1,4 @@
 async def m001_initial_invoices(db):
-
     # STATUS COLUMN OPTIONS: 'draft', 'open', 'paid', 'canceled'
 
     await db.execute(
