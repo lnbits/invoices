@@ -251,7 +251,7 @@ page %}
 <script>
   const paymentsString = {{ invoice_payments | tojson | safe }}
   const itemString = {{ invoice_items | tojson | safe }}
-  const invoice = JSON.parse('{{ invoice | safe }}')
+  const invoice = JSON.parse({{ invoice | tojson | safe }})
   const invoiceItems = itemString.map(JSON.parse) || []
   const invoice_total = parseInt('{{ invoice_total }}')
   const invoicePayments = paymentsString.map(JSON.parse) || []
