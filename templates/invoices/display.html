@@ -249,13 +249,12 @@ page %}
 
 {% endblock %} {% block scripts %}
 <script>
-  let paymentsString = {{ invoice_payments | tojson | safe }}
-  let itemString = {{ invoice_items | tojson | safe }}
-
+  const paymentsString = {{ invoice_payments | tojson | safe }}
+  const itemString = {{ invoice_items | tojson | safe }}
   const invoice = JSON.parse('{{ invoice | safe }}')
-  const invoiceItems = itemString.map(element => JSON.parse(element)) || []
+  const invoiceItems = itemString.map(JSON.parse) || []
   const invoice_total = parseInt('{{ invoice_total }}')
-  const invoicePayments = paymentsString.map(element => JSON.parse(element)) || []
+  const invoicePayments = paymentsString.map(JSON.parse) || []
   const payments_total = parseInt('{{ payments_total }}')
   const shareUrl = '{{ request.url }}'
 </script>
