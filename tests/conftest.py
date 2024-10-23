@@ -1,5 +1,4 @@
 import pytest_asyncio
-
 from lnbits.core.crud import create_account, create_wallet
 
 from ..crud import (
