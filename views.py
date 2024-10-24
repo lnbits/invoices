@@ -1,8 +1,6 @@
-from datetime import datetime
 from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.templating import Jinja2Templates
 from lnbits.core.models import User
 from lnbits.decorators import check_user_exists
 from lnbits.helpers import template_renderer
@@ -16,7 +14,6 @@ from .crud import (
     get_payments_total,
 )
 
-templates = Jinja2Templates(directory="templates")
 invoices_generic_router = APIRouter()
 
 
@@ -27,7 +24,7 @@ def invoices_renderer():
 @invoices_generic_router.get("/", response_class=HTMLResponse)
 async def index(request: Request, user: User = Depends(check_user_exists)):
     return invoices_renderer().TemplateResponse(
-        "invoices/index.html", {"request": request, "user": user.dict()}
+        "invoices/index.html", {"request": request, "user": user.json()}
     )
 
 
@@ -47,15 +44,14 @@ async def pay(request: Request, invoice_id: str):
     payments_total = await get_payments_total(invoice_payments)
 
     return invoices_renderer().TemplateResponse(
-        "invoices/pay.html",
+        "invoices/display.html",
         {
             "request": request,
             "invoice_id": invoice_id,
-            "invoice": invoice.dict(),
-            "invoice_items": invoice_items,
+            "invoice": invoice.json(),
+            "invoice_items": [item.json() for item in invoice_items],
             "invoice_total": invoice_total,
-            "invoice_payments": invoice_payments,
+            "invoice_payments": [payment.json() for payment in invoice_payments],
             "payments_total": payments_total,
-            "datetime": datetime,
         },
     )

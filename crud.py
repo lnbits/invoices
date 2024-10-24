@@ -5,37 +5,37 @@ from lnbits.helpers import urlsafe_short_hash
 
 from .models import (
     CreateInvoiceData,
-    CreateInvoiceItemData,
     Invoice,
     InvoiceItem,
+    InvoiceItemData,
     Payment,
-    UpdateInvoiceData,
-    UpdateInvoiceItemData,
 )
 
 db = Database("ext_invoices")
 
 
 async def get_invoice(invoice_id: str) -> Optional[Invoice]:
-    row = await db.fetchone(
-        "SELECT * FROM invoices.invoices WHERE id = ?", (invoice_id,)
+    return await db.fetchone(
+        "SELECT * FROM invoices.invoices WHERE id = :id",
+        {"id": invoice_id},
+        Invoice,
     )
-    return Invoice.from_row(row) if row else None
 
 
 async def get_invoice_items(invoice_id: str) -> List[InvoiceItem]:
-    rows = await db.fetchall(
-        "SELECT * FROM invoices.invoice_items WHERE invoice_id = ?", (invoice_id,)
+    return await db.fetchall(
+        "SELECT * FROM invoices.invoice_items WHERE invoice_id = :id",
+        {"id": invoice_id},
+        InvoiceItem,
     )
-
-    return [InvoiceItem.from_row(row) for row in rows]
 
 
 async def get_invoice_item(item_id: str) -> Optional[InvoiceItem]:
-    row = await db.fetchone(
-        "SELECT * FROM invoices.invoice_items WHERE id = ?", (item_id,)
+    return await db.fetchone(
+        "SELECT * FROM invoices.invoice_items WHERE id = :id",
+        {"id": item_id},
+        InvoiceItem,
     )
-    return InvoiceItem.from_row(row) if row else None
 
 
 async def get_invoice_total(items: List[InvoiceItem]) -> int:
@@ -46,27 +46,27 @@ async def get_invoices(wallet_ids: Union[str, List[str]]) -> List[Invoice]:
     if isinstance(wallet_ids, str):
         wallet_ids = [wallet_ids]
 
-    q = ",".join(["?"] * len(wallet_ids))
-    rows = await db.fetchall(
-        f"SELECT * FROM invoices.invoices WHERE wallet IN ({q})", (*wallet_ids,)
+    q = ",".join([f"'{wallet_id}'" for wallet_id in wallet_ids])
+    return await db.fetchall(
+        f"SELECT * FROM invoices.invoices WHERE wallet IN ({q})",
+        model=Invoice,
     )
-
-    return [Invoice.from_row(row) for row in rows]
 
 
 async def get_invoice_payments(invoice_id: str) -> List[Payment]:
-    rows = await db.fetchall(
-        "SELECT * FROM invoices.payments WHERE invoice_id = ?", (invoice_id,)
+    return await db.fetchall(
+        "SELECT * FROM invoices.payments WHERE invoice_id = :id",
+        {"id": invoice_id},
+        Payment,
     )
-
-    return [Payment.from_row(row) for row in rows]
 
 
 async def get_invoice_payment(payment_id: str) -> Optional[Payment]:
-    row = await db.fetchone(
-        "SELECT * FROM invoices.payments WHERE id = ?", (payment_id,)
+    return await db.fetchone(
+        "SELECT * FROM invoices.payments WHERE id = :id",
+        {"id": payment_id},
+        Payment,
     )
-    return Payment.from_row(row) if row else None
 
 
 async def get_payments_total(payments: List[Payment]) -> int:
@@ -75,82 +75,41 @@ async def get_payments_total(payments: List[Payment]) -> int:
 
 async def create_invoice_internal(wallet_id: str, data: CreateInvoiceData) -> Invoice:
     invoice_id = urlsafe_short_hash()
-    await db.execute(
-        """
-        INSERT INTO invoices.invoices
-        (
-            id, wallet, status, currency, company_name,
-            first_name, last_name, email, phone, address
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            invoice_id,
-            wallet_id,
-            data.status,
-            data.currency,
-            data.company_name,
-            data.first_name,
-            data.last_name,
-            data.email,
-            data.phone,
-            data.address,
-        ),
+    invoice = Invoice(
+        id=invoice_id,
+        wallet=wallet_id,
+        status=data.status,
+        currency=data.currency,
+        company_name=data.company_name,
+        first_name=data.first_name,
+        last_name=data.last_name,
+        email=data.email,
+        phone=data.phone,
+        address=data.address,
     )
-
-    invoice = await get_invoice(invoice_id)
-    assert invoice, "Newly created invoice couldn't be retrieved"
+    await db.insert("invoices.invoices", invoice)
     return invoice
 
 
 async def create_invoice_items(
-    invoice_id: str, data: List[CreateInvoiceItemData]
+    invoice_id: str, data: List[InvoiceItemData]
 ) -> List[InvoiceItem]:
+    invoice_items = []
     for item in data:
         item_id = urlsafe_short_hash()
-        await db.execute(
-            """
-            INSERT INTO invoices.invoice_items (id, invoice_id, description, amount)
-            VALUES (?, ?, ?, ?)
-            """,
-            (
-                item_id,
-                invoice_id,
-                item.description,
-                int(item.amount * 100),
-            ),
+        invoice_item = InvoiceItem(
+            id=item_id,
+            invoice_id=invoice_id,
+            description=item.description,
+            amount=int(item.amount * 100),
         )
-
-    invoice_items = await get_invoice_items(invoice_id)
+        invoice_items.append(invoice_item)
+        await db.insert("invoices.invoice_items", invoice_item)
     return invoice_items
 
 
-async def update_invoice_internal(
-    wallet_id: str, data: Union[UpdateInvoiceData, Invoice]
-) -> Invoice:
-    await db.execute(
-        """
-        UPDATE invoices.invoices
-        SET wallet = ?, currency = ?, status = ?, company_name = ?,
-        first_name = ?, last_name = ?, email = ?, phone = ?, address = ?
-        WHERE id = ?
-        """,
-        (
-            wallet_id,
-            data.currency,
-            data.status,
-            data.company_name,
-            data.first_name,
-            data.last_name,
-            data.email,
-            data.phone,
-            data.address,
-            data.id,
-        ),
-    )
-
-    invoice = await get_invoice(data.id)
-    assert invoice, "Newly updated invoice couldn't be retrieved"
+async def update_invoice_internal(invoice: Invoice) -> Invoice:
+    await db.update("invoices.invoices", invoice)
     return invoice
 
 
@@ -158,71 +117,28 @@ async def delete_invoice(
     invoice_id: str,
 ) -> bool:
     await db.execute(
-        """
-        DELETE FROM invoices.payments
-        WHERE invoice_id = ?
-        """,
-        (invoice_id,),
+        "DELETE FROM invoices.payments WHERE invoice_id = :id",
+        {"id": invoice_id},
     )
     await db.execute(
-        """
-        DELETE FROM invoices.invoice_items
-        WHERE invoice_id = ?
-        """,
-        (invoice_id,),
+        "DELETE FROM invoices.invoice_items WHERE invoice_id = :id",
+        {"id": invoice_id},
     )
     await db.execute(
-        """
-        DELETE FROM invoices.invoices
-        WHERE id = ?
-        """,
-        (invoice_id,),
+        "DELETE FROM invoices.invoices WHERE id = :id",
+        {"id": invoice_id},
     )
     return True
 
 
-async def update_invoice_items(
-    invoice_id: str, data: List[UpdateInvoiceItemData]
-) -> List[InvoiceItem]:
-    updated_items = []
-    for item in data:
-        if item.id:
-            updated_items.append(item.id)
-            await db.execute(
-                """
-                UPDATE invoices.invoice_items
-                SET description = ?, amount = ?
-                WHERE id = ?
-                """,
-                (item.description, int(item.amount * 100), item.id),
-            )
-
-    placeholders = ",".join("?" for _ in range(len(updated_items)))
-    if not placeholders:
-        placeholders = "?"
-        updated_items = ["skip"]
-
+async def delete_invoice_items(
+    invoice_id: str,
+) -> bool:
     await db.execute(
-        f"""
-        DELETE FROM invoices.invoice_items
-        WHERE invoice_id = ?
-        AND id NOT IN ({placeholders})
-        """,
-        (
-            invoice_id,
-            *tuple(updated_items),
-        ),
+        "DELETE FROM invoices.invoice_items WHERE invoice_id = :id",
+        {"id": invoice_id},
     )
-
-    for item in data:
-        if not item:
-            await create_invoice_items(
-                invoice_id=invoice_id,
-                data=[CreateInvoiceItemData(description=item.description)],
-            )
-
-    invoice_items = await get_invoice_items(invoice_id)
-    return invoice_items
+    return True
 
 
 async def create_invoice_payment(invoice_id: str, amount: int) -> Payment:
@@ -230,13 +146,9 @@ async def create_invoice_payment(invoice_id: str, amount: int) -> Payment:
     await db.execute(
         """
         INSERT INTO invoices.payments (id, invoice_id, amount)
-        VALUES (?, ?, ?)
+        VALUES (:id, :invoice_id, :amount)
         """,
-        (
-            payment_id,
-            invoice_id,
-            amount,
-        ),
+        {"id": payment_id, "invoice_id": invoice_id, "amount": amount},
     )
 
     payment = await get_invoice_payment(payment_id)
