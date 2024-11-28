@@ -175,7 +175,7 @@ async def api_invoices_check_payment(invoice_id: str, payment_hash: str):
             status_code=HTTPStatus.NOT_FOUND, detail="Invoice does not exist."
         )
     try:
-        payment = await get_standalone_payment(payment_hash)
+        payment = await get_standalone_payment(payment_hash, incoming=True)
         if not payment:
             raise HTTPException(
                 status_code=HTTPStatus.NOT_FOUND, detail="Payment does not exist."
