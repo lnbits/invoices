@@ -5,7 +5,7 @@ from ..crud import (
     create_invoice_internal,
     create_invoice_items,
 )
-from ..models import CreateInvoiceData, CreateInvoiceItemData, InvoiceStatusEnum
+from ..models import CreateInvoiceData, InvoiceItemData, InvoiceStatusEnum
 
 
 @pytest_asyncio.fixture
@@ -24,7 +24,7 @@ async def accounting_invoice(invoices_wallet):
         company_name="LNbits, Inc",
         first_name="Ben",
         last_name="Arc",
-        items=[CreateInvoiceItemData(amount=10.20, description="Item costs 10.20")],
+        items=[InvoiceItemData(amount=10.20, description="Item costs 10.20")],
         email="a@bna.at",
         address="1234 Main St",
         phone="600-000-000-000",

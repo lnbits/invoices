@@ -1,10 +1,10 @@
-#invoicePage > .row:first-child > .col-md-6 {
+/* #invoicePage > .row:first-child > .col-md-6 {
   display: flex;
 }
 
 #invoicePage > .row:first-child > .col-md-6 > .q-card {
   flex: 1;
-}
+} */
 
 #invoicePage .clear {
   margin-bottom: 25px;
@@ -14,7 +14,7 @@
   display: none;
 }
 
-@media (min-width: 1024px) {
+/* @media (min-width: 1024px) {
   #invoicePage > .row:first-child > .col-md-6:first-child > div {
     margin-right: 5px;
   }
@@ -22,7 +22,7 @@
   #invoicePage > .row:first-child > .col-md-6:nth-child(2) > div {
     margin-left: 5px;
   }
-}
+} */
 
 @media print {
   * {
