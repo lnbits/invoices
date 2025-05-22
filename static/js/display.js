@@ -125,6 +125,8 @@ window.app = Vue.createApp({
     this.payments_total = payments_total
     this.invoice_total = invoice_total
     this.shareUrl = shareUrl
+    console.log('invoice', this.invoice)
+    console.log('items', this.items)
     console.log((this.invoice_total - this.payments_total) / 100)
   }
 })

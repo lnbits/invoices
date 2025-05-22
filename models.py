@@ -17,6 +17,7 @@ class InvoiceItemData(BaseModel):
     id: Optional[str] = None
     description: str
     amount: float = Query(..., ge=0.01)
+    quantity: int = Query(..., ge=1)
 
 
 class CreateInvoiceData(BaseModel):
@@ -70,6 +71,7 @@ class InvoiceItem(BaseModel):
     invoice_id: str
     description: str
     amount: int
+    quantity: int
 
     class Config:
         orm_mode = True

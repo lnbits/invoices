@@ -1,10 +1,11 @@
 from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from starlette.responses import HTMLResponse
+
 from lnbits.core.models import User
 from lnbits.decorators import check_user_exists
 from lnbits.helpers import template_renderer
-from starlette.responses import HTMLResponse
 
 from .crud import (
     get_invoice,
@@ -40,6 +41,7 @@ async def pay(request: Request, invoice_id: str):
     invoice_items = await get_invoice_items(invoice_id)
     invoice_total = await get_invoice_total(invoice_items)
 
+    print(f"Invoice total: {invoice_total}")
     invoice_payments = await get_invoice_payments(invoice_id)
     payments_total = await get_payments_total(invoice_payments)
 
