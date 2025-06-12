@@ -6,13 +6,18 @@
   flex: 1;
 } */
 
+.q-table th {
+  font-size: 1em;
+  font-weight: bold !important;
+}
+
 #invoicePage .clear {
   margin-bottom: 25px;
 }
 
-#printQrCode {
+/* #printQrCode {
   display: none;
-}
+} */
 
 /* @media (min-width: 1024px) {
   #invoicePage > .row:first-child > .col-md-6:first-child > div {
@@ -42,7 +47,7 @@
 
   .q-card {
     box-shadow: none !important;
-    border: 1px solid black;
+    border: 1px solid black !important;
   }
 
   .q-item {
@@ -53,9 +58,9 @@
     padding: 5px;
   }
 
-  #printQrCode {
+  /* #printQrCode {
     display: block;
-  }
+  } */
 
   p {
     margin-bottom: 0px !important;

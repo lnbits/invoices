@@ -19,12 +19,34 @@
 page %}
 <link rel="stylesheet" href="/invoices/static/css/pay.css" />
 <div id="invoicePage">
-  <div class="row q-col-gutter-md">
-    <div class="col-md-6 col-sm-12 col-xs-12">
-      <q-card>
+  <q-card class="q-mb-md">
+    <q-card-section>
+      <div class="row q-pa-lg">
+        <div class="col-sm-6 col-xs-12">
+          <h6 class="q-my-none">Invoice</h6>
+        </div>
+        <div
+          class="col-sm-6 col-xs-12"
+          :class="$q.screen.gt.xs ? 'text-right' : ''"
+        >
+          <div>
+            <span class="text-bold">Invoice: </span>
+            <span v-text="invoice.id"></span>
+          </div>
+          <div>
+            <span class="text-bold">Created at: </span>
+            <span v-text="formatedDate(invoice.time)"></span>
+          </div>
+        </div>
+      </div>
+    </q-card-section>
+  </q-card>
+  <div class="row q-col-gutter-md q-mb-md">
+    <div :class="isPrinting ? 'col-6' : 'col-12 col-md-6'">
+      <q-card class="full-height">
         <q-card-section>
           <p class="text-bold">Invoice</p>
-          <q-list bordered separator>
+          <q-list bordered separator :dense="isPrinting">
             <q-item clickable v-ripple>
               <q-item-section><b>ID</b></q-item-section>
               <q-item-section
@@ -80,11 +102,11 @@ page %}
         </q-card-section>
       </q-card>
     </div>
-    <div class="col-md-6 col-sm-12 col-xs-12">
-      <q-card>
+    <div :class="isPrinting ? 'col-6' : 'col-12 col-md-6'">
+      <q-card class="full-height">
         <q-card-section>
           <p class="text-bold">Bill To</p>
-          <q-list bordered separator>
+          <q-list bordered separator :dense="isPrinting">
             <q-item clickable v-ripple>
               <q-item-section class="text-bold">Company Name</q-item-section>
               <q-item-section v-text="invoice.company_name"></q-item-section>
@@ -112,36 +134,29 @@ page %}
       </q-card>
     </div>
   </div>
-  <div class="clear"></div>
-  <div class="row q-col-gutter-md">
+  <div class="row q-col-gutter-md q-mb-md">
     <div class="col-12">
       <q-card>
         <q-card-section>
-          <p class="text-bold">Items</p>
-          <q-list bordered separator>
-            <q-item>
-              <q-item-section class="text-bold">Item</q-item-section>
-              <q-item-section side class="text-bold">Amount</q-item-section>
-            </q-item>
-            <q-item clickable v-ripple v-for="item in items" :key="item.id">
-              <q-item-section v-text="item.description"></q-item-section>
-              <q-item-section
-                side
-                v-text="parseFloat(item.amount / 100).toFixed(2)"
-              ></q-item-section>
-            </q-item>
-          </q-list>
+          <q-table
+            flat
+            :dense="isPrinting"
+            title="Items"
+            :rows="items"
+            row-key="id"
+            :columns="itemsTable.columns"
+            hide-pagination
+          ></q-table>
         </q-card-section>
       </q-card>
     </div>
   </div>
-  <div class="clear"></div>
   <div class="row q-col-gutter-md">
-    <div class="col-12 col-md-7">
+    <div :class="isPrinting ? 'col-7' : 'col-12 col-md-7'">
       <q-card>
         <q-card-section>
           <p class="text-bold">Payments</p>
-          <q-list bordered separator>
+          <q-list bordered separator :dense="isPrinting">
             <q-item clickable v-ripple>
               <q-item-section class="text-bold">Date</q-item-section>
               <q-item-section side class="text-bold">Amount</q-item-section>
@@ -164,11 +179,11 @@ page %}
         </q-card-section>
       </q-card>
     </div>
-    <div class="col-12 col-md-5" id="printQrCode">
+    <div :class="isPrinting ? 'col-5' : 'hidden'">
       <div class="text-center">
         <p><b>Scan to View & Pay Online!</b></p>
-        <div class="q-mx-auto q-mb-md" style="max-width: 200px">
-          <lnbits-qrcode :value="'{{ request.url }}'"></lnbits-qrcode>
+        <div class="q-mx-auto q-mb-md">
+          <lnbits-qrcode :value="'{{ request.url }}'" :options="{width: 150}"></lnbits-qrcode>
         </div>
       </div>
     </div>
