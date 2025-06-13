@@ -47,17 +47,16 @@ window.app = Vue.createApp({
           }
         ]
       },
-      isPrinting: false,
+      isPrinting: false
     }
   },
   methods: {
     printInvoice() {
-      this.isPrinting = true;
+      this.isPrinting = true
       this.$nextTick(() => {
-        window.print();
-        this.isPrinting = false;
-      }
-      )
+        window.print()
+        this.isPrinting = false
+      })
     },
     openFormDialog() {
       this.formDialog.show = true

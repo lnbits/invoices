@@ -183,7 +183,10 @@ page %}
       <div class="text-center">
         <p><b>Scan to View & Pay Online!</b></p>
         <div class="q-mx-auto q-mb-md">
-          <lnbits-qrcode :value="'{{ request.url }}'" :options="{width: 150}"></lnbits-qrcode>
+          <lnbits-qrcode
+            :value="'{{ request.url }}'"
+            :options="{width: 150}"
+          ></lnbits-qrcode>
         </div>
       </div>
     </div>

@@ -64,7 +64,7 @@ window.app = Vue.createApp({
         show: false,
         data: {},
         invoiceItems: []
-      },
+      }
     }
   },
   methods: {
