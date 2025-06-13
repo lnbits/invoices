@@ -56,7 +56,8 @@ async def m001_initial_invoices(db):
 
 async def m002_invoices_add_quantity(db):
     await db.execute(
-        "ALTER TABLE invoices.invoice_items ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1;"
+        "ALTER TABLE invoices.invoice_items "
+        "ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1;"
     )
 
     await db.execute("UPDATE invoices.invoice_items SET quantity = 1;")
