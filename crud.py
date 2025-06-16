@@ -39,7 +39,7 @@ async def get_invoice_item(item_id: str) -> Optional[InvoiceItem]:
 
 
 async def get_invoice_total(items: List[InvoiceItem]) -> int:
-    return sum(item.amount for item in items)
+    return sum((item.amount * item.quantity) for item in items)
 
 
 async def get_invoices(wallet_ids: Union[str, List[str]]) -> List[Invoice]:
@@ -102,6 +102,7 @@ async def create_invoice_items(
             invoice_id=invoice_id,
             description=item.description,
             amount=int(item.amount * 100),
+            quantity=item.quantity,
         )
         invoice_items.append(invoice_item)
         await db.insert("invoices.invoice_items", invoice_item)

@@ -20,12 +20,43 @@ window.app = Vue.createApp({
       },
       urlDialog: {
         show: false
-      }
+      },
+      itemsTable: {
+        columns: [
+          {name: 'item', align: 'left', label: 'Item', field: 'description'},
+          {
+            name: 'quantity',
+            align: 'left',
+            label: 'Quantity',
+            field: 'quantity'
+          },
+          {
+            name: 'unit_price',
+            align: 'left',
+            label: 'Unit Price',
+            field: 'amount',
+            format: val => parseFloat(val / 100).toFixed(2)
+          },
+          {
+            name: 'total_price',
+            align: 'right',
+            label: 'Total Price',
+            format: (_, row) => {
+              return parseFloat((row.amount * row.quantity) / 100).toFixed(2)
+            }
+          }
+        ]
+      },
+      isPrinting: false
     }
   },
   methods: {
     printInvoice() {
-      window.print()
+      this.isPrinting = true
+      this.$nextTick(() => {
+        window.print()
+        this.isPrinting = false
+      })
     },
     openFormDialog() {
       this.formDialog.show = true
@@ -125,6 +156,5 @@ window.app = Vue.createApp({
     this.payments_total = payments_total
     this.invoice_total = invoice_total
     this.shareUrl = shareUrl
-    console.log((this.invoice_total - this.payments_total) / 100)
   }
 })

@@ -189,13 +189,25 @@
                 label="Amount"
                 placeholder="4.20"
                 v-model="formDialog.invoiceItems[index].amount"
+                type="number"
+              ></q-input>
+            </q-item-section>
+            <q-item-section>
+              <q-input
+                filled
+                dense
+                label="Qty"
+                placeholder="1"
+                v-model.number="formDialog.invoiceItems[index].quantity"
+                type="number"
+                min="1"
               ></q-input>
             </q-item-section>
             <q-item-section side>
               <q-btn
                 unelevated
                 dense
-                size="xs"
+                size="sm"
                 icon="delete"
                 :color="($q.dark.isActive) ? 'grey-7' : 'grey-5'"
                 @click="formDialog.invoiceItems.splice(index, 1)"
@@ -203,7 +215,7 @@
             </q-item-section>
           </q-item>
 
-          <q-item clickable v-ripple>
+          <q-item>
             <q-btn flat icon="add" @click="formDialog.invoiceItems.push({})">
               Add Line Item
             </q-btn>
