@@ -142,8 +142,10 @@ async def api_invoices_create_payment(
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail="Invoice does not exist."
         )
-
-    price_in_sats = await fiat_amount_as_satoshis(data.famount / 100, invoice.currency)
+    if invoice.currency != "sats":
+        price_in_sats = await fiat_amount_as_satoshis(data.famount / 100, invoice.currency)
+    else:
+        price_in_sats = data.famount
 
     try:
         payment = await create_invoice(
