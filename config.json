@@ -1,6 +1,10 @@
 {
+  "id": "invoices",
+  "version": "1.1.0",
   "name": "Invoices",
+  "repo": "https://github.com/lnbits/invoices",
   "short_description": "Create invoices for your clients",
+  "description": "",
   "tile": "/invoices/static/image/invoices.png",
   "min_lnbits_version": "1.0.0",
   "contributors": [
@@ -38,5 +42,9 @@
   ],
   "description_md": "https://raw.githubusercontent.com/lnbits/invoices/main/description.md",
   "terms_and_conditions_md": "https://raw.githubusercontent.com/lnbits/invoices/main/toc.md",
-  "license": "MIT"
+  "license": "MIT",
+  "paid_features": "",
+  "tags": ["Merchant", "Invoicing"],
+  "donate": "",
+  "hidden": false
 }
