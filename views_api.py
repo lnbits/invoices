@@ -59,7 +59,7 @@ async def api_invoice(invoice_id: str) -> InvoiceFull:
     payments_total = await get_payments_total(invoice_payments)
 
     invoice = InvoiceFull(
-        **invoice.dict(), items=invoice_items, payments=payments_total
+        **invoice.model_dump(), items=invoice_items, payments=payments_total
     )
     return invoice
 
@@ -103,7 +103,7 @@ async def api_invoice_update(
             detail="You do not have permission to update this invoice.",
         )
 
-    for key, value in data.dict().items():
+    for key, value in data.model_dump().items():
         if key == "items":
             continue
         setattr(invoice, key, value)
@@ -143,7 +143,9 @@ async def api_invoices_create_payment(
             status_code=HTTPStatus.NOT_FOUND, detail="Invoice does not exist."
         )
     if invoice.currency != "sats":
-        price_in_sats = await fiat_amount_as_satoshis(data.famount / 100, invoice.currency)
+        price_in_sats = await fiat_amount_as_satoshis(
+            data.famount / 100, invoice.currency
+        )
     else:
         price_in_sats = data.famount
 

@@ -3,7 +3,7 @@ from enum import Enum
 from typing import List, Optional
 
 from fastapi import Query
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class InvoiceStatusEnum(str, Enum):
@@ -23,16 +23,15 @@ class InvoiceItemData(BaseModel):
 class CreateInvoiceData(BaseModel):
     status: InvoiceStatusEnum = InvoiceStatusEnum.draft
     currency: str
-    company_name: Optional[str]
-    first_name: Optional[str]
-    last_name: Optional[str]
-    email: Optional[str]
-    phone: Optional[str]
-    address: Optional[str]
+    company_name: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
     items: List[InvoiceItemData]
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class UpdateInvoiceData(BaseModel):
@@ -62,8 +61,7 @@ class Invoice(BaseModel):
     address: Optional[str] = None
     time: datetime = datetime.now(timezone.utc)
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class InvoiceItem(BaseModel):
@@ -73,8 +71,7 @@ class InvoiceItem(BaseModel):
     amount: int
     quantity: int
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Payment(BaseModel):
