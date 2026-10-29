@@ -1,9 +1,8 @@
 from datetime import datetime, timezone
 from enum import Enum
-from typing import List, Optional
 
 from fastapi import Query
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class InvoiceStatusEnum(str, Enum):
@@ -14,7 +13,7 @@ class InvoiceStatusEnum(str, Enum):
 
 
 class InvoiceItemData(BaseModel):
-    id: Optional[str] = None
+    id: str | None = None
     description: str
     amount: float = Query(..., ge=0.01)
     quantity: int = Query(..., ge=1)
@@ -23,16 +22,15 @@ class InvoiceItemData(BaseModel):
 class CreateInvoiceData(BaseModel):
     status: InvoiceStatusEnum = InvoiceStatusEnum.draft
     currency: str
-    company_name: Optional[str]
-    first_name: Optional[str]
-    last_name: Optional[str]
-    email: Optional[str]
-    phone: Optional[str]
-    address: Optional[str]
-    items: List[InvoiceItemData]
+    company_name: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    address: str | None = None
+    items: list[InvoiceItemData]
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class UpdateInvoiceData(BaseModel):
@@ -40,13 +38,13 @@ class UpdateInvoiceData(BaseModel):
     wallet: str
     status: InvoiceStatusEnum = InvoiceStatusEnum.draft
     currency: str
-    company_name: Optional[str] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    address: Optional[str] = None
-    items: List[InvoiceItemData]
+    company_name: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    address: str | None = None
+    items: list[InvoiceItemData]
 
 
 class Invoice(BaseModel):
@@ -54,16 +52,15 @@ class Invoice(BaseModel):
     wallet: str
     status: InvoiceStatusEnum = InvoiceStatusEnum.draft
     currency: str
-    company_name: Optional[str] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    address: Optional[str] = None
+    company_name: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    address: str | None = None
     time: datetime = datetime.now(timezone.utc)
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class InvoiceItem(BaseModel):
@@ -73,8 +70,7 @@ class InvoiceItem(BaseModel):
     amount: int
     quantity: int
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Payment(BaseModel):
@@ -90,5 +86,5 @@ class CreatePaymentData(BaseModel):
 
 
 class InvoiceFull(Invoice):
-    items: List[InvoiceItem] = []
+    items: list[InvoiceItem] = []
     payments: int = 0

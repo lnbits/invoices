@@ -24,7 +24,7 @@ def invoices_renderer():
 @invoices_generic_router.get("/", response_class=HTMLResponse)
 async def index(request: Request, user: User = Depends(check_user_exists)):
     return invoices_renderer().TemplateResponse(
-        "invoices/index.html", {"request": request, "user": user.json()}
+        "invoices/index.html", {"request": request, "user": user.model_dump_json()}
     )
 
 
@@ -48,10 +48,12 @@ async def pay(request: Request, invoice_id: str):
         {
             "request": request,
             "invoice_id": invoice_id,
-            "invoice": invoice.json(),
-            "invoice_items": [item.json() for item in invoice_items],
+            "invoice": invoice.model_dump_json(),
+            "invoice_items": [item.model_dump_json() for item in invoice_items],
             "invoice_total": invoice_total,
-            "invoice_payments": [payment.json() for payment in invoice_payments],
+            "invoice_payments": [
+                payment.model_dump_json() for payment in invoice_payments
+            ],
             "payments_total": payments_total,
         },
     )

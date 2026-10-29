@@ -1,5 +1,3 @@
-from typing import List, Optional, Union
-
 from lnbits.db import Database
 from lnbits.helpers import urlsafe_short_hash
 
@@ -14,7 +12,7 @@ from .models import (
 db = Database("ext_invoices")
 
 
-async def get_invoice(invoice_id: str) -> Optional[Invoice]:
+async def get_invoice(invoice_id: str) -> Invoice | None:
     return await db.fetchone(
         "SELECT * FROM invoices.invoices WHERE id = :id",
         {"id": invoice_id},
@@ -22,7 +20,7 @@ async def get_invoice(invoice_id: str) -> Optional[Invoice]:
     )
 
 
-async def get_invoice_items(invoice_id: str) -> List[InvoiceItem]:
+async def get_invoice_items(invoice_id: str) -> list[InvoiceItem]:
     return await db.fetchall(
         "SELECT * FROM invoices.invoice_items WHERE invoice_id = :id",
         {"id": invoice_id},
@@ -30,7 +28,7 @@ async def get_invoice_items(invoice_id: str) -> List[InvoiceItem]:
     )
 
 
-async def get_invoice_item(item_id: str) -> Optional[InvoiceItem]:
+async def get_invoice_item(item_id: str) -> InvoiceItem | None:
     return await db.fetchone(
         "SELECT * FROM invoices.invoice_items WHERE id = :id",
         {"id": item_id},
@@ -38,11 +36,11 @@ async def get_invoice_item(item_id: str) -> Optional[InvoiceItem]:
     )
 
 
-async def get_invoice_total(items: List[InvoiceItem]) -> int:
+async def get_invoice_total(items: list[InvoiceItem]) -> int:
     return sum((item.amount * item.quantity) for item in items)
 
 
-async def get_invoices(wallet_ids: Union[str, List[str]]) -> List[Invoice]:
+async def get_invoices(wallet_ids: str | list[str]) -> list[Invoice]:
     if isinstance(wallet_ids, str):
         wallet_ids = [wallet_ids]
 
@@ -53,7 +51,7 @@ async def get_invoices(wallet_ids: Union[str, List[str]]) -> List[Invoice]:
     )
 
 
-async def get_invoice_payments(invoice_id: str) -> List[Payment]:
+async def get_invoice_payments(invoice_id: str) -> list[Payment]:
     return await db.fetchall(
         "SELECT * FROM invoices.payments WHERE invoice_id = :id",
         {"id": invoice_id},
@@ -61,7 +59,7 @@ async def get_invoice_payments(invoice_id: str) -> List[Payment]:
     )
 
 
-async def get_invoice_payment(payment_id: str) -> Optional[Payment]:
+async def get_invoice_payment(payment_id: str) -> Payment | None:
     return await db.fetchone(
         "SELECT * FROM invoices.payments WHERE id = :id",
         {"id": payment_id},
@@ -69,7 +67,7 @@ async def get_invoice_payment(payment_id: str) -> Optional[Payment]:
     )
 
 
-async def get_payments_total(payments: List[Payment]) -> int:
+async def get_payments_total(payments: list[Payment]) -> int:
     return sum(item.amount for item in payments)
 
 
@@ -92,8 +90,8 @@ async def create_invoice_internal(wallet_id: str, data: CreateInvoiceData) -> In
 
 
 async def create_invoice_items(
-    invoice_id: str, data: List[InvoiceItemData]
-) -> List[InvoiceItem]:
+    invoice_id: str, data: list[InvoiceItemData]
+) -> list[InvoiceItem]:
     invoice_items = []
     for item in data:
         item_id = urlsafe_short_hash()
