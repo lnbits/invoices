@@ -93,6 +93,8 @@ async def test_unrecorded_payment_is_ignored(invoice, payment):
         {"amount": -50_000},
         {"status": "pending"},
         {"status": "failed"},
+        {"extra": {}},
+        {"extra": {"tag": "other"}},
     ],
 )
 async def test_recorded_payment_must_match(invoice, payment, changes):
@@ -119,7 +121,7 @@ async def test_partial_payments_use_recorded_amount_once(invoice, payment):
     assert stored is not None
     assert stored.status == "open"
 
-    second = payment.model_copy(update={"payment_hash": "b" * 64, "extra": {}})
+    second = payment.model_copy(update={"payment_hash": "b" * 64})
     await crud.create_invoice_payment_request(
         invoice.id, second.payment_hash, 500, second.amount
     )
