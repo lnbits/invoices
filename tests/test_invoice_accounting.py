@@ -1,15 +1,14 @@
-from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
 from fastapi import HTTPException
-from lnbits.core.models import Payment
+from lnbits.core.models import KeyType, Payment, Wallet, WalletTypeInfo
 from lnbits.db import Database
 from lnbits.settings import settings
 
 from .. import crud, migrations, tasks, views_api
-from ..models import CreateInvoiceData, InvoiceItemData
+from ..models import CreateInvoiceData, InvoiceItemData, InvoiceStatusEnum
 
 
 @pytest_asyncio.fixture
@@ -28,7 +27,7 @@ async def invoice_db(tmp_path, monkeypatch):
 @pytest_asyncio.fixture
 async def invoice(invoice_db):
     data = CreateInvoiceData(
-        status="open",
+        status=InvoiceStatusEnum.open,
         currency="USD",
         items=[InvoiceItemData(description="Item", amount=10, quantity=1)],
     )
@@ -56,18 +55,14 @@ async def test_delete_requires_invoice_wallet(invoice):
     await crud.create_invoice_payment(invoice.id, 1)
     await crud.create_invoice_payment_request(invoice.id, "hash", 1, 1_000)
     with pytest.raises(HTTPException) as error:
-        await views_api.api_invoice_delete(
-            invoice.id, SimpleNamespace(wallet=SimpleNamespace(id="other"))
-        )
+        await views_api.api_invoice_delete(invoice.id, _key_info("other"))
     assert error.value.status_code == 403
     assert await crud.get_invoice(invoice.id)
     assert await crud.get_invoice_items(invoice.id)
     assert await crud.get_invoice_payments(invoice.id)
     assert await crud.get_invoice_payment_request("hash")
 
-    result = await views_api.api_invoice_delete(
-        invoice.id, SimpleNamespace(wallet=SimpleNamespace(id="merchant"))
-    )
+    result = await views_api.api_invoice_delete(invoice.id, _key_info("merchant"))
     assert result == {"status": True}
     assert await crud.get_invoice(invoice.id) is None
     assert await crud.get_invoice_items(invoice.id) == []
@@ -75,9 +70,7 @@ async def test_delete_requires_invoice_wallet(invoice):
     assert await crud.get_invoice_payment_request("hash") is None
 
     with pytest.raises(HTTPException) as error:
-        await views_api.api_invoice_delete(
-            invoice.id, SimpleNamespace(wallet=SimpleNamespace(id="merchant"))
-        )
+        await views_api.api_invoice_delete(invoice.id, _key_info("merchant"))
     assert error.value.status_code == 404
 
 
@@ -85,7 +78,9 @@ async def test_delete_requires_invoice_wallet(invoice):
 async def test_unrecorded_payment_is_ignored(invoice, payment):
     payment.extra.update(invoice_id=invoice.id, famount=1_000)
     await tasks.on_invoice_paid(payment)
-    assert (await crud.get_invoice(invoice.id)).status == "open"
+    stored = await crud.get_invoice(invoice.id)
+    assert stored is not None
+    assert stored.status == "open"
     assert await crud.get_invoice_payments(invoice.id) == []
 
 
@@ -105,7 +100,9 @@ async def test_recorded_payment_must_match(invoice, payment, changes):
         invoice.id, payment.payment_hash, 1_000, payment.amount
     )
     await tasks.on_invoice_paid(payment.model_copy(update=changes))
-    assert (await crud.get_invoice(invoice.id)).status == "open"
+    stored = await crud.get_invoice(invoice.id)
+    assert stored is not None
+    assert stored.status == "open"
     assert await crud.get_invoice_payments(invoice.id) == []
 
 
@@ -118,7 +115,9 @@ async def test_partial_payments_use_recorded_amount_once(invoice, payment):
     await tasks.on_invoice_paid(payment)
     payments = await crud.get_invoice_payments(invoice.id)
     assert await crud.get_payments_total(payments) == 500
-    assert (await crud.get_invoice(invoice.id)).status == "open"
+    stored = await crud.get_invoice(invoice.id)
+    assert stored is not None
+    assert stored.status == "open"
 
     second = payment.model_copy(update={"payment_hash": "b" * 64, "extra": {}})
     await crud.create_invoice_payment_request(
@@ -127,7 +126,9 @@ async def test_partial_payments_use_recorded_amount_once(invoice, payment):
     await tasks.on_invoice_paid(second)
     payments = await crud.get_invoice_payments(invoice.id)
     assert await crud.get_payments_total(payments) == 1_000
-    assert (await crud.get_invoice(invoice.id)).status == "paid"
+    stored = await crud.get_invoice(invoice.id)
+    assert stored is not None
+    assert stored.status == "paid"
 
 
 @pytest.mark.asyncio
@@ -143,6 +144,20 @@ async def test_payer_endpoint_records_quote(invoice, payment, monkeypatch):
     assert create.call_args.kwargs["wallet_id"] == invoice.wallet
     assert create.call_args.kwargs["amount"] == 50
     request = await crud.get_invoice_payment_request(payment.payment_hash)
+    assert request is not None
     assert request.invoice_id == invoice.id
     assert request.amount == 1_000
     assert request.amount_msat == 50_000
+
+
+def _key_info(wallet_id: str) -> WalletTypeInfo:
+    return WalletTypeInfo(
+        key_type=KeyType.admin,
+        wallet=Wallet(
+            id=wallet_id,
+            user="user",
+            name="Test wallet",
+            adminkey="admin-key",
+            inkey="invoice-key",
+        ),
+    )
