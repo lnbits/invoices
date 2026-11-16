@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from .crud import (
     create_invoice_internal,
     create_invoice_items,
+    create_invoice_payment_request,
     delete_invoice,
     delete_invoice_items,
     get_invoice,
@@ -73,10 +74,20 @@ async def api_invoice_create(
     return invoice
 
 
-@invoices_api_router.delete(
-    "/api/v1/invoice/{invoice_id}", dependencies=[Depends(require_admin_key)]
-)
-async def api_invoice_delete(invoice_id: str):
+@invoices_api_router.delete("/api/v1/invoice/{invoice_id}")
+async def api_invoice_delete(
+    invoice_id: str, key_info: WalletTypeInfo = Depends(require_admin_key)
+):
+    invoice = await get_invoice(invoice_id)
+    if not invoice:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail="Invoice does not exist."
+        )
+    if invoice.wallet != key_info.wallet.id:
+        raise HTTPException(
+            status_code=HTTPStatus.FORBIDDEN,
+            detail="You do not have permission to delete this invoice.",
+        )
     try:
         status = await delete_invoice(invoice_id=invoice_id)
         return {"status": status}
@@ -159,6 +170,12 @@ async def api_invoices_create_payment(
                 "invoice_id": invoice_id,
                 "famount": data.famount,
             },
+        )
+        await create_invoice_payment_request(
+            invoice_id=invoice.id,
+            payment_hash=payment.payment_hash,
+            amount=data.famount,
+            amount_msat=payment.amount,
         )
     except Exception as exc:
         raise HTTPException(

@@ -6,6 +6,7 @@ from .models import (
     Invoice,
     InvoiceItem,
     InvoiceItemData,
+    InvoicePaymentRequest,
     Payment,
 )
 
@@ -116,6 +117,10 @@ async def delete_invoice(
     invoice_id: str,
 ) -> bool:
     await db.execute(
+        "DELETE FROM invoices.payment_requests WHERE invoice_id = :id",
+        {"id": invoice_id},
+    )
+    await db.execute(
         "DELETE FROM invoices.payments WHERE invoice_id = :id",
         {"id": invoice_id},
     )
@@ -140,16 +145,44 @@ async def delete_invoice_items(
     return True
 
 
-async def create_invoice_payment(invoice_id: str, amount: int) -> Payment:
-    payment_id = urlsafe_short_hash()
+async def create_invoice_payment(
+    invoice_id: str, amount: int, payment_id: str | None = None
+) -> Payment:
+    payment_id = payment_id or urlsafe_short_hash()
     await db.execute(
         """
         INSERT INTO invoices.payments (id, invoice_id, amount)
         VALUES (:id, :invoice_id, :amount)
+        ON CONFLICT (id) DO NOTHING
         """,
         {"id": payment_id, "invoice_id": invoice_id, "amount": amount},
     )
 
     payment = await get_invoice_payment(payment_id)
-    assert payment, "Newly created payment couldn't be retrieved"
+    if not payment:
+        raise ValueError("Newly created payment couldn't be retrieved")
     return payment
+
+
+async def create_invoice_payment_request(
+    invoice_id: str, payment_hash: str, amount: int, amount_msat: int
+) -> None:
+    await db.insert(
+        "invoices.payment_requests",
+        InvoicePaymentRequest(
+            payment_hash=payment_hash,
+            invoice_id=invoice_id,
+            amount=amount,
+            amount_msat=amount_msat,
+        ),
+    )
+
+
+async def get_invoice_payment_request(
+    payment_hash: str,
+) -> InvoicePaymentRequest | None:
+    return await db.fetchone(
+        "SELECT * FROM invoices.payment_requests WHERE payment_hash = :payment_hash",
+        {"payment_hash": payment_hash},
+        InvoicePaymentRequest,
+    )

@@ -85,6 +85,13 @@ class CreatePaymentData(BaseModel):
     amount: int
 
 
+class InvoicePaymentRequest(BaseModel):
+    payment_hash: str
+    invoice_id: str
+    amount: int
+    amount_msat: int
+
+
 class InvoiceFull(Invoice):
     items: list[InvoiceItem] = []
     payments: int = 0
