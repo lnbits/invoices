@@ -7,6 +7,7 @@ from .crud import (
     create_invoice_payment,
     get_invoice,
     get_invoice_items,
+    get_invoice_payment_request,
     get_invoice_payments,
     get_invoice_total,
     get_payments_total,
@@ -25,19 +26,24 @@ async def wait_for_paid_invoices():
 
 
 async def on_invoice_paid(payment: Payment) -> None:
-    if not payment.extra or payment.extra.get("tag") != "invoices":
+    if not payment.is_in or not payment.success:
         return
 
-    invoice_id = payment.extra.get("invoice_id")
-    assert invoice_id
-
-    amount = payment.extra.get("famount")
-    assert amount
-
-    await create_invoice_payment(invoice_id=invoice_id, amount=amount)
-
+    request = await get_invoice_payment_request(payment.payment_hash)
+    if not request:
+        return
+    invoice_id = request.invoice_id
     invoice = await get_invoice(invoice_id)
-    assert invoice
+    if (
+        not invoice
+        or payment.wallet_id != invoice.wallet
+        or payment.amount != request.amount_msat
+    ):
+        return
+
+    await create_invoice_payment(
+        invoice_id=invoice_id, amount=request.amount, payment_id=payment.payment_hash
+    )
 
     invoice_items = await get_invoice_items(invoice_id)
     invoice_total = await get_invoice_total(invoice_items)

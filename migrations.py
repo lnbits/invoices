@@ -61,3 +61,17 @@ async def m002_invoices_add_quantity(db):
     )
 
     await db.execute("UPDATE invoices.invoice_items SET quantity = 1;")
+
+
+async def m003_invoice_payment_requests(db):
+    await db.execute(
+        f"""
+        CREATE TABLE invoices.payment_requests (
+            payment_hash TEXT PRIMARY KEY,
+            invoice_id TEXT NOT NULL,
+            amount {db.big_int} NOT NULL,
+            amount_msat {db.big_int} NOT NULL,
+            FOREIGN KEY(invoice_id) REFERENCES {db.references_schema}invoices(id)
+        );
+        """
+    )
