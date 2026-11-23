@@ -4,7 +4,6 @@ window.app = Vue.createApp({
   data: function () {
     return {
       invoice: null,
-      wallet: null,
       currency: null,
       qrCodeDialog: {
         data: {
@@ -111,7 +110,7 @@ window.app = Vue.createApp({
       console.log(`Subscribing to ${url}`)
       ws.addEventListener('message', async ({data}) => {
         const resp = JSON.parse(data)
-        if (!resp.pending || resp.paid) {
+        if (resp.status === 'success' || resp.paid === true) {
           Quasar.Notify.create({
             type: 'positive',
             message: 'Invoice Paid!'
@@ -149,12 +148,14 @@ window.app = Vue.createApp({
   created() {
     this.invoice = invoice
     this.invoice_id = invoice.id
-    this.wallet = invoice.wallet
     this.currency = invoice.currency
     this.items = invoiceItems
     this.payments = invoicePayments
     this.payments_total = payments_total
     this.invoice_total = invoice_total
-    this.shareUrl = shareUrl
+    this.shareUrl = new URL(
+      window.location.pathname,
+      window.location.origin
+    ).href
   }
 })

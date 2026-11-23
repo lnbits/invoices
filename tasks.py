@@ -1,6 +1,8 @@
 import asyncio
 
+from lnbits.core.crud import get_standalone_payment
 from lnbits.core.models import Payment
+from lnbits.settings import settings
 from lnbits.tasks import register_invoice_listener
 
 from .crud import (
@@ -11,16 +13,15 @@ from .crud import (
     get_invoice_payments,
     get_invoice_total,
     get_payments_total,
-    update_invoice_internal,
+    mark_invoice_paid,
 )
-from .models import InvoiceStatusEnum
 
 
 async def wait_for_paid_invoices():
     invoice_queue = asyncio.Queue()
     register_invoice_listener(invoice_queue, "ext_invoices")
 
-    while True:
+    while settings.lnbits_running:
         payment = await invoice_queue.get()
         await on_invoice_paid(payment)
 
@@ -32,17 +33,30 @@ async def on_invoice_paid(payment: Payment) -> None:
         return
 
     request = await get_invoice_payment_request(payment.payment_hash)
-    if not request:
+    if not request or payment.extra.get("invoice_id") != request.invoice_id:
         return
     invoice_id = request.invoice_id
     invoice = await get_invoice(invoice_id)
     if (
         not invoice
-        or payment.wallet_id != invoice.wallet
+        or payment.wallet_id != (request.wallet_id or invoice.wallet)
         or payment.amount != request.amount_msat
     ):
         return
 
+    checking_id = request.checking_id
+    if checking_id is None:
+        # Quotes issued before m004 only recorded the core payment hash.
+        original = await get_standalone_payment(
+            request.payment_hash, incoming=True, wallet_id=invoice.wallet
+        )
+        if not original or original.payment_hash != request.payment_hash:
+            return
+        checking_id = original.checking_id
+    if payment.checking_id != checking_id:
+        return
+
+    # The quote is in invoice currency; the exact payment amount is in msat.
     await create_invoice_payment(
         invoice_id=invoice_id, amount=request.amount, payment_id=payment.payment_hash
     )
@@ -54,7 +68,4 @@ async def on_invoice_paid(payment: Payment) -> None:
     payments_total = await get_payments_total(invoice_payments)
 
     if payments_total >= invoice_total:
-        invoice.status = InvoiceStatusEnum.paid
-        await update_invoice_internal(invoice)
-
-    return
+        await mark_invoice_paid(invoice)

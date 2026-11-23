@@ -17,6 +17,7 @@ window.app = Vue.createApp({
     return {
       invoices: [],
       currencyOptions: [],
+      loadingInvoice: false,
       invoicesTable: {
         columns: [
           {name: 'id', align: 'left', label: 'ID', field: 'id'},
@@ -72,19 +73,44 @@ window.app = Vue.createApp({
       this.formDialog.data = {}
       this.formDialog.invoiceItems = []
     },
-    showEditModal(obj) {
-      this.formDialog.data = obj
-      this.formDialog.show = true
-
-      this.getInvoice(obj.id)
-    },
-    getInvoice(invoice_id) {
-      LNbits.api
-        .request('GET', `/invoices/api/v1/invoice/${invoice_id}`)
-        .then(response => {
-          this.formDialog.invoiceItems =
-            response.data.items.map(mapInvoiceItems)
+    walletKey(wallet_id) {
+      const key = _.findWhere(this.g.user.wallets, {id: wallet_id})?.adminkey
+      if (!key) {
+        Quasar.Notify.create({
+          type: 'warning',
+          message: 'The selected invoice wallet is unavailable.'
         })
+      }
+      return key
+    },
+    async showEditModal(invoice) {
+      if (this.loadingInvoice) return
+
+      const key = this.walletKey(invoice.wallet)
+      if (!key) return
+
+      this.loadingInvoice = true
+      try {
+        const {data} = await LNbits.api.request(
+          'GET',
+          `/invoices/api/v1/invoice/${invoice.id}`,
+          key
+        )
+        this.formDialog.invoiceItems = data.items.map(mapInvoiceItems)
+        this.formDialog.data = invoice
+        this.formDialog.show = true
+      } catch (error) {
+        if (error.response) {
+          LNbits.utils.notifyApiError(error)
+        } else {
+          Quasar.Notify.create({
+            type: 'warning',
+            message: 'Could not load invoice items.'
+          })
+        }
+      } finally {
+        this.loadingInvoice = false
+      }
     },
     getInvoices() {
       LNbits.api
@@ -103,11 +129,10 @@ window.app = Vue.createApp({
       this.formDialog.show = false
     },
     saveInvoice() {
-      let data = this.formDialog.data
+      const data = this.formDialog.data
+      const walletKey = this.walletKey(data.wallet)
+      if (!walletKey) return
       data.items = this.formDialog.invoiceItems
-      const walletKey = _.findWhere(this.g.user.wallets, {
-        id: data.wallet
-      }).adminkey
 
       if (data.id) {
         return this.updateInvoice(data, walletKey)
@@ -135,8 +160,9 @@ window.app = Vue.createApp({
         })
         .catch(LNbits.utils.notifyApiError)
     },
-    deleteInvoice(invoice_id) {
-      const adminkey = this.g.user.wallets[0].adminkey
+    deleteInvoice(invoice_id, wallet_id) {
+      const adminkey = this.walletKey(wallet_id)
+      if (!adminkey) return
       LNbits.utils
         .confirmDialog('Are you sure you want to delete this Invoice?')
         .onOk(() => {

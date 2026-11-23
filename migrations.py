@@ -75,3 +75,10 @@ async def m003_invoice_payment_requests(db):
         );
         """
     )
+
+
+async def m004_bind_invoice_payment_requests(db):
+    await db.execute("ALTER TABLE invoices.payment_requests ADD COLUMN wallet_id TEXT")
+    await db.execute(
+        "ALTER TABLE invoices.payment_requests ADD COLUMN checking_id TEXT"
+    )

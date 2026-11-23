@@ -33,18 +33,8 @@ class CreateInvoiceData(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
 
-class UpdateInvoiceData(BaseModel):
-    id: str
-    wallet: str
-    status: InvoiceStatusEnum = InvoiceStatusEnum.draft
-    currency: str
-    company_name: str | None = None
-    first_name: str | None = None
-    last_name: str | None = None
-    email: str | None = None
-    phone: str | None = None
-    address: str | None = None
-    items: list[InvoiceItemData]
+class UpdateInvoiceData(CreateInvoiceData):
+    pass
 
 
 class Invoice(BaseModel):
@@ -90,6 +80,8 @@ class InvoicePaymentRequest(BaseModel):
     invoice_id: str
     amount: int
     amount_msat: int
+    wallet_id: str | None = None
+    checking_id: str | None = None
 
 
 class InvoiceFull(Invoice):
