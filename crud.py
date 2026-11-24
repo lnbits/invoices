@@ -7,6 +7,7 @@ from .models import (
     InvoiceItem,
     InvoiceItemData,
     InvoicePaymentRequest,
+    InvoiceStatusEnum,
     Payment,
 )
 
@@ -109,8 +110,23 @@ async def create_invoice_items(
 
 
 async def update_invoice_internal(invoice: Invoice) -> Invoice:
-    await db.update("invoices.invoices", invoice)
+    await db.update("invoices.invoices", invoice, "WHERE id = :id AND wallet = :wallet")
     return invoice
+
+
+async def mark_invoice_paid(invoice: Invoice) -> None:
+    await db.execute(
+        """
+        UPDATE invoices.invoices SET status = :paid
+        WHERE id = :id AND wallet = :wallet AND status = :open
+        """,
+        {
+            "paid": InvoiceStatusEnum.paid.value,
+            "id": invoice.id,
+            "wallet": invoice.wallet,
+            "open": InvoiceStatusEnum.open.value,
+        },
+    )
 
 
 async def delete_invoice(
@@ -165,7 +181,13 @@ async def create_invoice_payment(
 
 
 async def create_invoice_payment_request(
-    invoice_id: str, payment_hash: str, amount: int, amount_msat: int
+    invoice_id: str,
+    payment_hash: str,
+    amount: int,
+    amount_msat: int,
+    *,
+    wallet_id: str,
+    checking_id: str,
 ) -> None:
     await db.insert(
         "invoices.payment_requests",
@@ -174,6 +196,8 @@ async def create_invoice_payment_request(
             invoice_id=invoice_id,
             amount=amount,
             amount_msat=amount_msat,
+            wallet_id=wallet_id,
+            checking_id=checking_id,
         ),
     )
 

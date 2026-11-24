@@ -48,7 +48,21 @@ async def pay(request: Request, invoice_id: str):
         {
             "request": request,
             "invoice_id": invoice_id,
-            "invoice": invoice.model_dump_json(),
+            # "Bill To" is part of the shared printable invoice, not wallet data.
+            "invoice": invoice.model_dump_json(
+                include={
+                    "id",
+                    "status",
+                    "currency",
+                    "time",
+                    "company_name",
+                    "first_name",
+                    "last_name",
+                    "email",
+                    "phone",
+                    "address",
+                }
+            ),
             "invoice_items": [item.model_dump_json() for item in invoice_items],
             "invoice_total": invoice_total,
             "invoice_payments": [

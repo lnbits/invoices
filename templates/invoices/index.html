@@ -4,7 +4,12 @@
   <div class="col-12 col-lg-7 q-gutter-y-md">
     <q-card>
       <q-card-section>
-        <q-btn unelevated color="primary" @click="formDialog.show = true">
+        <q-btn
+          unelevated
+          color="primary"
+          :disable="loadingInvoice"
+          @click="formDialog.show = true"
+        >
           New Invoice
         </q-btn>
       </q-card-section>
@@ -47,6 +52,7 @@
                   size="sm"
                   icon="edit"
                   :color="($q.dark.isActive) ? 'grey-7' : 'grey-5'"
+                  :disable="loadingInvoice"
                   @click="showEditModal(props.row)"
                   class="q-mr-sm"
                 ></q-btn>
@@ -68,7 +74,7 @@
                 <q-btn
                   flat
                   size="sm"
-                  @click="deleteInvoice(props.row.id)"
+                  @click="deleteInvoice(props.row.id, props.row.wallet)"
                   icon="cancel"
                   color="pink"
                 ></q-btn>
@@ -103,6 +109,7 @@
           dense
           emit-value
           v-model="formDialog.data.wallet"
+          :disable="!!formDialog.data.id"
           :options="g.user.walletOptions"
           label="Wallet *"
         ></q-select>

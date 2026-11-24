@@ -2,7 +2,7 @@ from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from lnbits.core.crud import get_standalone_payment, get_user
-from lnbits.core.models import Payment, WalletTypeInfo
+from lnbits.core.models import WalletTypeInfo
 from lnbits.core.services import create_invoice
 from lnbits.decorators import require_admin_key
 from lnbits.utils.exchange_rates import fiat_amount_as_satoshis
@@ -17,6 +17,7 @@ from .crud import (
     delete_invoice_items,
     get_invoice,
     get_invoice_items,
+    get_invoice_payment_request,
     get_invoice_payments,
     get_invoice_total,
     get_invoices,
@@ -27,6 +28,7 @@ from .models import (
     CreateInvoiceData,
     Invoice,
     InvoiceFull,
+    InvoiceStatusEnum,
     UpdateInvoiceData,
 )
 
@@ -48,11 +50,18 @@ async def api_invoices(
 
 
 @invoices_api_router.get("/api/v1/invoice/{invoice_id}")
-async def api_invoice(invoice_id: str) -> InvoiceFull:
+async def api_invoice(
+    invoice_id: str, key_info: WalletTypeInfo = Depends(require_admin_key)
+) -> InvoiceFull:
     invoice = await get_invoice(invoice_id)
     if not invoice:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail="Invoice does not exist."
+        )
+    if invoice.wallet != key_info.wallet.id:
+        raise HTTPException(
+            status_code=HTTPStatus.FORBIDDEN,
+            detail="You do not have permission to read this invoice.",
         )
     invoice_items = await get_invoice_items(invoice_id)
 
@@ -114,9 +123,7 @@ async def api_invoice_update(
             detail="You do not have permission to update this invoice.",
         )
 
-    for key, value in data.model_dump().items():
-        if key == "items":
-            continue
+    for key, value in data.model_dump(exclude={"items"}).items():
         setattr(invoice, key, value)
 
     await delete_invoice_items(invoice_id=invoice_id)
@@ -131,13 +138,27 @@ class InvoiceAmountPayment(BaseModel):
     famount: int = Query(..., ge=1, description="Amount to pay in fiat currency.")
 
 
+class InvoicePaymentResponse(BaseModel):
+    bolt11: str
+    payment_hash: str
+
+
 @invoices_api_router.post(
     "/api/v1/invoice/{invoice_id}/payments", status_code=HTTPStatus.CREATED
 )
 async def api_invoices_create_payment(
     invoice_id: str, data: InvoiceAmountPayment
-) -> Payment:
+) -> InvoicePaymentResponse:
     invoice = await get_invoice(invoice_id)
+    if not invoice:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail="Invoice does not exist."
+        )
+    if invoice.status != InvoiceStatusEnum.open:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail="Invoice is not open."
+        )
+
     invoice_items = await get_invoice_items(invoice_id)
     invoice_total = await get_invoice_total(invoice_items)
 
@@ -149,10 +170,6 @@ async def api_invoices_create_payment(
             status_code=HTTPStatus.BAD_REQUEST, detail="Amount exceeds invoice due."
         )
 
-    if not invoice:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail="Invoice does not exist."
-        )
     if invoice.currency != "sats":
         price_in_sats = await fiat_amount_as_satoshis(
             data.famount / 100, invoice.currency
@@ -168,7 +185,6 @@ async def api_invoices_create_payment(
             extra={
                 "tag": "invoices",
                 "invoice_id": invoice_id,
-                "famount": data.famount,
             },
         )
         await create_invoice_payment_request(
@@ -176,32 +192,58 @@ async def api_invoices_create_payment(
             payment_hash=payment.payment_hash,
             amount=data.famount,
             amount_msat=payment.amount,
+            wallet_id=payment.wallet_id,
+            checking_id=payment.checking_id,
         )
     except Exception as exc:
+        logger.error("Could not create invoice payment: {}", exc)
         raise HTTPException(
-            status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(exc)
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail="Could not create invoice payment.",
         ) from exc
 
-    return payment
+    return InvoicePaymentResponse(
+        bolt11=payment.bolt11, payment_hash=payment.payment_hash
+    )
 
 
-@invoices_api_router.get(
-    "/api/v1/invoice/{invoice_id}/payments/{payment_hash}",
-    dependencies=[Depends(require_admin_key)],
-)
-async def api_invoices_check_payment(invoice_id: str, payment_hash: str):
+@invoices_api_router.get("/api/v1/invoice/{invoice_id}/payments/{payment_hash}")
+async def api_invoices_check_payment(
+    invoice_id: str,
+    payment_hash: str,
+    key_info: WalletTypeInfo = Depends(require_admin_key),
+):
     invoice = await get_invoice(invoice_id)
     if not invoice:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail="Invoice does not exist."
         )
+    if invoice.wallet != key_info.wallet.id:
+        raise HTTPException(
+            status_code=HTTPStatus.FORBIDDEN,
+            detail="You do not have permission to check payments for this invoice.",
+        )
     try:
-        payment = await get_standalone_payment(payment_hash, incoming=True)
-        if not payment:
-            raise HTTPException(
-                status_code=HTTPStatus.NOT_FOUND, detail="Payment does not exist."
+        quote = await get_invoice_payment_request(payment_hash)
+        if not quote or quote.invoice_id != invoice_id:
+            return {"paid": False}
+
+        payment = await get_standalone_payment(
+            quote.checking_id or payment_hash, incoming=True
+        )
+        return {
+            "paid": bool(
+                payment
+                and payment.success
+                and payment.payment_hash == quote.payment_hash
+                and payment.wallet_id == (quote.wallet_id or invoice.wallet)
+                and payment.amount == quote.amount_msat
+                and (
+                    quote.checking_id is None
+                    or payment.checking_id == quote.checking_id
+                )
             )
-        return {"paid": payment.success}
+        }
 
     except Exception as exc:
         logger.error(exc)

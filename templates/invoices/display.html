@@ -184,7 +184,7 @@ page %}
         <p><b>Scan to View & Pay Online!</b></p>
         <div class="q-mx-auto q-mb-md">
           <lnbits-qrcode
-            :value="'{{ request.url }}'"
+            :value="shareUrl"
             :options="{width: 150}"
           ></lnbits-qrcode>
         </div>
@@ -274,7 +274,6 @@ page %}
   const invoice_total = parseInt('{{ invoice_total }}')
   const invoicePayments = paymentsString.map(JSON.parse) || []
   const payments_total = parseInt('{{ payments_total }}')
-  const shareUrl = '{{ request.url }}'
 </script>
 <script src="{{ static_url_for('invoices/static', path='js/display.js') }}"></script>
 {% endblock %}

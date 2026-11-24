@@ -17,5 +17,5 @@ This extension allows users to create "traditional" invoices (not in the lightni
    - enter a company name, first name, last name, email, phone & address (optional)
    - add one or more line items
    - enter a name & price for each line item
-3. You can then use share your invoice link with your customer to receive payment\
+3. Share the invoice link with your customer to receive payment. Anyone with the link can view and print the invoice, including its Bill To details. Only open invoices accept new payment requests.\
    ![invoice link](https://i.imgur.com/GxNuavy.png)

@@ -11,7 +11,7 @@
           ><span class="text-blue">GET</span> /invoices/api/v1/invoices</code
         >
         <h5 class="text-caption q-mt-sm q-mb-none">Headers</h5>
-        <code>{"X-Api-Key": &lt;invoice_key&gt;}</code><br />
+        <code>{"X-Api-Key": &lt;admin_key&gt;}</code><br />
         <h5 class="text-caption q-mt-sm q-mb-none">Body (application/json)</h5>
         <h5 class="text-caption q-mt-sm q-mb-none">
           Returns 200 OK (application/json)
@@ -20,7 +20,7 @@
         <h5 class="text-caption q-mt-sm q-mb-none">Curl example</h5>
         <code
           >curl -X GET {{ request.base_url }}invoices/api/v1/invoices -H
-          "X-Api-Key: &lt;invoice_key&gt;"
+          "X-Api-Key: &lt;admin_key&gt;"
         </code>
       </q-card-section>
     </q-card>
@@ -34,7 +34,7 @@
           /invoices/api/v1/invoice/{invoice_id}</code
         >
         <h5 class="text-caption q-mt-sm q-mb-none">Headers</h5>
-        <code>{"X-Api-Key": &lt;invoice_key&gt;}</code><br />
+        <code>{"X-Api-Key": &lt;admin_key&gt;}</code><br />
         <h5 class="text-caption q-mt-sm q-mb-none">Body (application/json)</h5>
         <h5 class="text-caption q-mt-sm q-mb-none">
           Returns 200 OK (application/json)
@@ -44,7 +44,7 @@
         <code
           >curl -X GET {{ request.base_url
           }}invoices/api/v1/invoice/{invoice_id} -H "X-Api-Key:
-          &lt;invoice_key&gt;"
+          &lt;admin_key&gt;"
         </code>
       </q-card-section>
     </q-card>
@@ -57,7 +57,7 @@
           ><span class="text-blue">POST</span> /invoices/api/v1/invoice</code
         >
         <h5 class="text-caption q-mt-sm q-mb-none">Headers</h5>
-        <code>{"X-Api-Key": &lt;invoice_key&gt;}</code><br />
+        <code>{"X-Api-Key": &lt;admin_key&gt;}</code><br />
         <h5 class="text-caption q-mt-sm q-mb-none">Body (application/json)</h5>
         <h5 class="text-caption q-mt-sm q-mb-none">
           Returns 200 OK (application/json)
@@ -66,7 +66,7 @@
         <h5 class="text-caption q-mt-sm q-mb-none">Curl example</h5>
         <code
           >curl -X POST {{ request.base_url }}invoices/api/v1/invoice -H
-          "X-Api-Key: &lt;invoice_key&gt;"
+          "X-Api-Key: &lt;admin_key&gt;"
         </code>
       </q-card-section>
     </q-card>
@@ -76,11 +76,11 @@
     <q-card>
       <q-card-section>
         <code
-          ><span class="text-blue">POST</span>
+          ><span class="text-blue">PUT</span>
           /invoices/api/v1/invoice/{invoice_id}</code
         >
         <h5 class="text-caption q-mt-sm q-mb-none">Headers</h5>
-        <code>{"X-Api-Key": &lt;invoice_key&gt;}</code><br />
+        <code>{"X-Api-Key": &lt;admin_key&gt;}</code><br />
         <h5 class="text-caption q-mt-sm q-mb-none">Body (application/json)</h5>
         <h5 class="text-caption q-mt-sm q-mb-none">
           Returns 200 OK (application/json)
@@ -88,9 +88,9 @@
         <code>{invoice_object}</code>
         <h5 class="text-caption q-mt-sm q-mb-none">Curl example</h5>
         <code
-          >curl -X POST {{ request.base_url
+          >curl -X PUT {{ request.base_url
           }}invoices/api/v1/invoice/{invoice_id} -H "X-Api-Key:
-          &lt;invoice_key&gt;"
+          &lt;admin_key&gt;"
         </code>
       </q-card-section>
     </q-card>
@@ -108,17 +108,17 @@
           ><span class="text-blue">POST</span>
           /invoices/api/v1/invoice/{invoice_id}/payments</code
         >
-        <h5 class="text-caption q-mt-sm q-mb-none">Headers</h5>
         <h5 class="text-caption q-mt-sm q-mb-none">Body (application/json)</h5>
+        <code>{"famount": 100}</code>
         <h5 class="text-caption q-mt-sm q-mb-none">
-          Returns 200 OK (application/json)
+          Returns 201 Created (application/json)
         </h5>
-        <code>{payment_object}</code>
+        <code>{"bolt11": "...", "payment_hash": "..."}</code>
         <h5 class="text-caption q-mt-sm q-mb-none">Curl example</h5>
         <code
           >curl -X POST {{ request.base_url
-          }}invoices/api/v1/invoice/{invoice_id}/payments -H "X-Api-Key:
-          &lt;invoice_key&gt;"
+          }}invoices/api/v1/invoice/{invoice_id}/payments -H "Content-Type:
+          application/json" -d '{"famount": 100}'
         </code>
       </q-card-section>
     </q-card>
@@ -137,15 +137,16 @@
           /invoices/api/v1/invoice/{invoice_id}/payments/{payment_hash}</code
         >
         <h5 class="text-caption q-mt-sm q-mb-none">Headers</h5>
-        <h5 class="text-caption q-mt-sm q-mb-none">Body (application/json)</h5>
+        <code>{"X-Api-Key": &lt;admin_key&gt;}</code><br />
         <h5 class="text-caption q-mt-sm q-mb-none">
           Returns 200 OK (application/json)
         </h5>
+        <code>{"paid": true}</code>
         <h5 class="text-caption q-mt-sm q-mb-none">Curl example</h5>
         <code
           >curl -X GET {{ request.base_url
           }}invoices/api/v1/invoice/{invoice_id}/payments/{payment_hash} -H
-          "X-Api-Key: &lt;invoice_key&gt;"
+          "X-Api-Key: &lt;admin_key&gt;"
         </code>
       </q-card-section>
     </q-card>
